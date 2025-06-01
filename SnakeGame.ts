@@ -1,5 +1,5 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig } from './types';
-import { defaultConfig } from './config';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType } from './types.js';
+import { defaultConfig } from './config.js';
 
 export class SnakeGame {
     private canvas: HTMLCanvasElement;
@@ -90,11 +90,13 @@ export class SnakeGame {
 
     private generateFood(): FoodItem {
         let food: FoodItem;
+        const foodTypes: FoodType[] = ['red', 'blue', 'orange'];
         do {
             food = {
                 x: Math.floor(Math.random() * this.tileCount.x),
                 y: Math.floor(Math.random() * this.tileCount.y),
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                type: foodTypes[Math.floor(Math.random() * foodTypes.length)]
             };
         } while (this.snake.some(segment => segment.x === food.x && segment.y === food.y) ||
                  (this.foods || []).some(f => f.x === food.x && f.y === food.y));
@@ -303,7 +305,12 @@ export class SnakeGame {
 
     private drawFood(): void {
         this.foods.forEach(food => {
-            this.ctx.fillStyle = '#ff0000';
+            const colors = {
+                red: '#ff0000',
+                blue: '#0000ff',
+                orange: '#ffa500'
+            };
+            this.ctx.fillStyle = colors[food.type];
             this.ctx.fillRect(
                 food.x * this.config.gridSize,
                 food.y * this.config.gridSize,

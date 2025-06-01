@@ -16,8 +16,11 @@ export interface SnakeSegment extends Position {
     convergence?: number;
 }
 
+export type FoodType = 'red' | 'blue' | 'orange';
+
 export interface FoodItem extends Position {
     createdAt: number;
+    type: FoodType;
 }
 
 export interface GameConfig {

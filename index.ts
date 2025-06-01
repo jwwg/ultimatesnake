@@ -1,4 +1,4 @@
-import { SnakeGame } from './SnakeGame';
+import { SnakeGame } from './SnakeGame.js';
 
 // Initialize the game
 const game = new SnakeGame(); 
