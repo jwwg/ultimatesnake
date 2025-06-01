@@ -14,12 +14,14 @@ interface SnakeSegment extends Position {
     // Add any additional properties you want for each segment
     age?: number;
     lastDirection?: Direction;
+    convergence?: number;
 }
 
 class SnakeGame {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private readonly gridSize: number = 20;
+    private readonly segmentScale: number = 0.9;
     private tileCount: { x: number; y: number };
     private snake: SnakeSegment[];
     private food: Position;
@@ -46,7 +48,8 @@ class SnakeGame {
             type: 'head',
             color: '#45a049',
             age: 0,
-            lastDirection: { x: 0, y: 0 }
+            lastDirection: { x: 0, y: 0 },
+            convergence: 3
         }];
         
         this.food = this.generateFood();
@@ -111,13 +114,18 @@ class SnakeGame {
     private update(): void {
         if (this.isGameOver || this.isWaiting) return;
 
+        const lastConvergence = this.snake[0].convergence || 3;
+        const convergenceChange = Math.random() < 0.5 ? -1 : 1;
+        const newConvergence = Math.max(1, Math.min(5, lastConvergence + convergenceChange));
+
         const head: SnakeSegment = {
             x: (this.snake[0].x + this.direction.x + this.tileCount.x) % this.tileCount.x,
             y: (this.snake[0].y + this.direction.y + this.tileCount.y) % this.tileCount.y,
             type: 'head',
             color: '#45a049',
             age: 0,
-            lastDirection: { ...this.direction }
+            lastDirection: { ...this.direction },
+            convergence: newConvergence
         };
 
         // Update existing segments
@@ -168,36 +176,102 @@ class SnakeGame {
             const size = this.gridSize - 2;
             
             // Draw segment
-            this.ctx.fillStyle = segment.color || '#4CAF50';
-            this.ctx.fillRect(x, y, size, size);
-            
-            // Draw direction arrow if lastDirection exists
-            if (segment.lastDirection) {
-                this.ctx.fillStyle = '#ffffff';
+            if (segment.type === 'head') {
+                // Draw head as an outlined arrow
+                this.ctx.strokeStyle = segment.color || '#45a049';
+                this.ctx.lineWidth = 2;
+                const arrowLength = size * this.segmentScale;
+                const arrowWidth = size * this.segmentScale;
                 const centerX = x + size/2;
                 const centerY = y + size/2;
-                const arrowSize = size/3;
                 
                 this.ctx.beginPath();
-                if (segment.lastDirection.x === 1) {
-                    this.ctx.moveTo(centerX + arrowSize/2, centerY);
-                    this.ctx.lineTo(centerX - arrowSize/2, centerY - arrowSize/2);
-                    this.ctx.lineTo(centerX - arrowSize/2, centerY + arrowSize/2);
-                } else if (segment.lastDirection.x === -1) {
-                    this.ctx.moveTo(centerX - arrowSize/2, centerY);
-                    this.ctx.lineTo(centerX + arrowSize/2, centerY - arrowSize/2);
-                    this.ctx.lineTo(centerX + arrowSize/2, centerY + arrowSize/2);
-                } else if (segment.lastDirection.y === 1) {
-                    this.ctx.moveTo(centerX, centerY + arrowSize/2);
-                    this.ctx.lineTo(centerX - arrowSize/2, centerY - arrowSize/2);
-                    this.ctx.lineTo(centerX + arrowSize/2, centerY - arrowSize/2);
-                } else if (segment.lastDirection.y === -1) {
-                    this.ctx.moveTo(centerX, centerY - arrowSize/2);
-                    this.ctx.lineTo(centerX - arrowSize/2, centerY + arrowSize/2);
-                    this.ctx.lineTo(centerX + arrowSize/2, centerY + arrowSize/2);
+                if (segment.lastDirection?.x === 1) {
+                    // Right arrow
+                    this.ctx.moveTo(x, centerY - arrowWidth/2);
+                    this.ctx.lineTo(x + arrowLength, centerY - arrowWidth/2);
+                    this.ctx.lineTo(x + arrowLength, centerY + arrowWidth/2);
+                    this.ctx.lineTo(x, centerY + arrowWidth/2);
+                    this.ctx.lineTo(x, centerY - arrowWidth/2);
+                } else if (segment.lastDirection?.x === -1) {
+                    // Left arrow
+                    this.ctx.moveTo(x + size, centerY - arrowWidth/2);
+                    this.ctx.lineTo(x + size - arrowLength, centerY - arrowWidth/2);
+                    this.ctx.lineTo(x + size - arrowLength, centerY + arrowWidth/2);
+                    this.ctx.lineTo(x + size, centerY + arrowWidth/2);
+                    this.ctx.lineTo(x + size, centerY - arrowWidth/2);
+                } else if (segment.lastDirection?.y === 1) {
+                    // Down arrow
+                    this.ctx.moveTo(centerX - arrowWidth/2, y);
+                    this.ctx.lineTo(centerX - arrowWidth/2, y + arrowLength);
+                    this.ctx.lineTo(centerX + arrowWidth/2, y + arrowLength);
+                    this.ctx.lineTo(centerX + arrowWidth/2, y);
+                    this.ctx.lineTo(centerX - arrowWidth/2, y);
+                } else if (segment.lastDirection?.y === -1) {
+                    // Up arrow
+                    this.ctx.moveTo(centerX - arrowWidth/2, y + size);
+                    this.ctx.lineTo(centerX - arrowWidth/2, y + size - arrowLength);
+                    this.ctx.lineTo(centerX + arrowWidth/2, y + size - arrowLength);
+                    this.ctx.lineTo(centerX + arrowWidth/2, y + size);
+                    this.ctx.lineTo(centerX - arrowWidth/2, y + size);
                 }
-                this.ctx.closePath();
-                this.ctx.fill();
+                this.ctx.stroke();
+            } else {
+                // Draw body segment as outlined rectangle with same proportions as head
+                this.ctx.strokeStyle = segment.color || '#4CAF50';
+                this.ctx.lineWidth = 1;
+                const segmentLength = size * this.segmentScale;
+                const segmentWidth = size * this.segmentScale;
+                const centerX = x + size/2;
+                const centerY = y + size/2;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX - segmentLength/2, centerY - segmentWidth/2);
+                this.ctx.lineTo(centerX + segmentLength/2, centerY - segmentWidth/2);
+                this.ctx.lineTo(centerX + segmentLength/2, centerY + segmentWidth/2);
+                this.ctx.lineTo(centerX - segmentLength/2, centerY + segmentWidth/2);
+                this.ctx.lineTo(centerX - segmentLength/2, centerY - segmentWidth/2);
+                this.ctx.stroke();
+            }
+            
+            // Draw direction lines if lastDirection exists
+            if (segment.lastDirection) {
+                this.ctx.strokeStyle = '#32CD32';
+                this.ctx.lineWidth = 1;
+                const convergence = segment.convergence || 3;
+                
+                if (segment.lastDirection.x === 1 || segment.lastDirection.x === -1) {
+                    // Draw horizontal lines for left/right movement
+                    const offsetLeft = segment.lastDirection.x === 1 ? 0 : convergence;
+                    const offsetRight = segment.lastDirection.x === 1 ? convergence : 0;
+                    // Top line
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, y + offsetLeft);
+                    this.ctx.lineTo(x + size, y + offsetRight);
+                    this.ctx.stroke();
+                    
+                    // Bottom line
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, y + size - offsetLeft);
+                    this.ctx.lineTo(x + size, y + size - offsetRight);
+                    this.ctx.stroke();
+                } else if (segment.lastDirection.y === 1 || segment.lastDirection.y === -1) {
+                    // Draw vertical lines for up/down movement
+                    const offsetTop = segment.lastDirection.y === 1 ? 0 : convergence;
+                    const offsetBottom = segment.lastDirection.y === 1 ? convergence : 0;
+                    
+                    // Left line
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x + offsetTop, y);
+                    this.ctx.lineTo(x + offsetBottom, y + size);
+                    this.ctx.stroke();
+                    
+                    // Right line
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x + size - offsetTop, y);
+                    this.ctx.lineTo(x + size - offsetBottom, y + size);
+                    this.ctx.stroke();
+                }
             }
         });
 
@@ -251,7 +325,8 @@ class SnakeGame {
             type: 'head',
             color: '#45a049',
             age: 0,
-            lastDirection: { x: 0, y: 0 }
+            lastDirection: { x: 0, y: 0 },
+            convergence: 3
         }];
         
         this.direction = { x: 1, y: 0 };
