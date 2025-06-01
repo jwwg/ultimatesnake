@@ -1,0 +1,15 @@
+{
+    "name": "ultimatesnake",
+    "version": "1.0.0",
+    "description": "A TypeScript implementation of Snake",
+    "main": "dist/game.js",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "start": "tsc && serve"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "serve": "^14.0.0"
+    }
+} 
