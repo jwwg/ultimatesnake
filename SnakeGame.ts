@@ -16,6 +16,11 @@ export class SnakeGame {
     private isGameOver: boolean;
     private isWaiting: boolean;
     private lastFoodGeneration: number;
+    private readonly foodColors = {
+        red: '#ff0000',
+        blue: '#0000ff',
+        orange: '#ffa500'
+    } as const;
 
     constructor(config: GameConfig = defaultConfig) {
         this.config = config;
@@ -118,33 +123,64 @@ export class SnakeGame {
         const convergenceChange = Math.random() < 0.5 ? -1 : 1;
         const newConvergence = Math.max(1, Math.min(5, lastConvergence + convergenceChange));
 
-        const head: SnakeSegment = {
-            x: (this.snake[0].x + this.direction.x + this.tileCount.x) % this.tileCount.x,
-            y: (this.snake[0].y + this.direction.y + this.tileCount.y) % this.tileCount.y,
-            type: 'head',
-            color: '#45a049',
-            age: 0,
-            lastDirection: { ...this.direction },
-            convergence: newConvergence
-        };
+        // Calculate new head position
+        const newHeadX = (this.snake[0].x + this.direction.x + this.tileCount.x) % this.tileCount.x;
+        const newHeadY = (this.snake[0].y + this.direction.y + this.tileCount.y) % this.tileCount.y;
 
-        this.snake.forEach(segment => {
-            segment.type = 'body';
-            segment.color = '#4CAF50';
-            if (segment.age !== undefined) segment.age++;
-        });
-
-        if (this.checkCollision(head)) {
+        // Check for collision before moving
+        if (this.checkCollision({ x: newHeadX, y: newHeadY })) {
             this.gameOver();
             return;
         }
 
-        this.snake.unshift(head);
+        // Update positions in reverse order
+        for (let i = this.snake.length - 1; i > 0; i--) {
+            const currentSegment = this.snake[i];
+            const previousSegment = this.snake[i - 1];
+            if (currentSegment && previousSegment) {
+                currentSegment.x = previousSegment.x;
+                currentSegment.y = previousSegment.y;
+                if (previousSegment.lastDirection) {
+                    currentSegment.lastDirection = { 
+                        x: previousSegment.lastDirection.x,
+                        y: previousSegment.lastDirection.y
+                    };
+                }
+                if (currentSegment.age !== undefined) currentSegment.age++;
+            }
+        }
 
-        const foodIndex = this.foods.findIndex(food => head.x === food.x && head.y === food.y);
+        // Update head position and properties
+        this.snake[0].x = newHeadX;
+        this.snake[0].y = newHeadY;
+        this.snake[0].lastDirection = { ...this.direction };
+        this.snake[0].convergence = newConvergence;
+
+        const foodIndex = this.foods.findIndex(food => newHeadX === food.x && newHeadY === food.y);
         if (foodIndex !== -1) {
             this.score += this.config.scorePerFood;
             this.updateScore();
+            const consumedFood = this.foods[foodIndex];
+            
+            // Shift all segment colors one position back
+            for (let i = this.snake.length - 1; i > 0; i--) {
+                this.snake[i].color = this.snake[i - 1].color;
+            }
+            // Set new head color
+            this.snake[0].color = this.foodColors[consumedFood.type];
+            
+            // Add new segment at the end with the last segment's color
+            const lastSegment = this.snake[this.snake.length - 1];
+            this.snake.push({
+                x: lastSegment.x,
+                y: lastSegment.y,
+                type: 'body',
+                color: lastSegment.color,
+                age: 0,
+                lastDirection: lastSegment.lastDirection ? { ...lastSegment.lastDirection } : undefined,
+                convergence: lastSegment.convergence
+            });
+            
             this.foods.splice(foodIndex, 1);
             this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
             if (this.gameLoop) {
@@ -154,8 +190,6 @@ export class SnakeGame {
                     this.draw();
                 }, this.speed);
             }
-        } else {
-            this.snake.pop();
         }
     }
 
@@ -213,20 +247,25 @@ export class SnakeGame {
     }
 
     private drawSnakeBody(segment: SnakeSegment, x: number, y: number, size: number): void {
-        this.ctx.strokeStyle = segment.color || '#4CAF50';
-        this.ctx.lineWidth = 1;
-        const segmentLength = size * this.config.segmentScale;
-        const segmentWidth = size * this.config.segmentScale;
-        const centerX = x + size/2;
-        const centerY = y + size/2;
-        
-        this.ctx.beginPath();
-        this.ctx.moveTo(centerX - segmentLength/2, centerY - segmentWidth/2);
-        this.ctx.lineTo(centerX + segmentLength/2, centerY - segmentWidth/2);
-        this.ctx.lineTo(centerX + segmentLength/2, centerY + segmentWidth/2);
-        this.ctx.lineTo(centerX - segmentLength/2, centerY + segmentWidth/2);
-        this.ctx.lineTo(centerX - segmentLength/2, centerY - segmentWidth/2);
-        this.ctx.stroke();
+        if (segment.color === this.foodColors.orange) {
+            this.ctx.fillStyle = this.foodColors.orange;
+            this.ctx.fillRect(x, y, size, size);
+        } else {
+            this.ctx.strokeStyle = segment.color || '#4CAF50';
+            this.ctx.lineWidth = 1;
+            const segmentLength = size * this.config.segmentScale;
+            const segmentWidth = size * this.config.segmentScale;
+            const centerX = x + size/2;
+            const centerY = y + size/2;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - segmentLength/2, centerY - segmentWidth/2);
+            this.ctx.lineTo(centerX + segmentLength/2, centerY - segmentWidth/2);
+            this.ctx.lineTo(centerX + segmentLength/2, centerY + segmentWidth/2);
+            this.ctx.lineTo(centerX - segmentLength/2, centerY + segmentWidth/2);
+            this.ctx.lineTo(centerX - segmentLength/2, centerY - segmentWidth/2);
+            this.ctx.stroke();
+        }
     }
 
     private drawDirectionLines(segment: SnakeSegment, x: number, y: number, size: number): void {
@@ -305,12 +344,7 @@ export class SnakeGame {
 
     private drawFood(): void {
         this.foods.forEach(food => {
-            const colors = {
-                red: '#ff0000',
-                blue: '#0000ff',
-                orange: '#ffa500'
-            };
-            this.ctx.fillStyle = colors[food.type];
+            this.ctx.fillStyle = this.foodColors[food.type];
             this.ctx.fillRect(
                 food.x * this.config.gridSize,
                 food.y * this.config.gridSize,
