@@ -168,7 +168,9 @@ export class SnakeGame {
 
         const foodIndex = this.foods.findIndex(food => newHeadX === food.x && newHeadY === food.y);
         if (foodIndex !== -1) {
-            this.score += this.config.scorePerFood;
+            // Calculate score based on snake length
+            const lengthBonus = Math.floor(this.snake.length * this.config.scoreLengthMultiplier);
+            this.score += this.config.scorePerFood + lengthBonus;
             this.updateScore();
             const consumedFood = this.foods[foodIndex];
             
@@ -218,7 +220,7 @@ export class SnakeGame {
             }
             this.snake = this.snake.slice(0, collisionIndex);
             // Reward scales with segments cut off, with a bonus for cutting off more segments
-            const reward = Math.floor(segmentsCutOff * 2.5);
+            const reward = Math.floor(segmentsCutOff * this.config.ramRewardMultiplier);
             this.score += reward;
             this.updateScore();
             return false;

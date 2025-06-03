@@ -9,5 +9,7 @@ export const defaultConfig: GameConfig = {
     initialSpeed: 150,
     minSpeed: 50,
     speedDecrease: 2,
-    scorePerFood: 10
+    scorePerFood: 10,
+    ramRewardMultiplier: 25, //should be high, so that its worth cutting off segments
+    scoreLengthMultiplier: 0.5 //should be significantly less than ramRewardMultiplier
 }; 

@@ -34,4 +34,6 @@ export interface GameConfig {
     minSpeed: number;
     speedDecrease: number;
     scorePerFood: number;
+    ramRewardMultiplier: number;
+    scoreLengthMultiplier: number;
 } 
