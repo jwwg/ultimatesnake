@@ -1,10 +1,17 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType, SegmentType } from './types.js';
 
 export class SnakeRenderer {
     readonly foodColors = {
         red: '#ff0000',
         blue: '#0000ff',
         orange: '#ffa500'
+    } as const;
+
+    readonly segmentColors = {
+        normal: '#4CAF50',
+        ram: '#0000ff',
+        speedy: '#ffa500',
+        head: '#45a049'
     } as const;
 
     private destructionAnimations: { segment: SnakeSegment; startTime: number }[] = [];
@@ -88,10 +95,10 @@ export class SnakeRenderer {
     }
 
     drawSnakeHead(segment: SnakeSegment, x: number, y: number, size: number): void {
-        if (segment.color === this.foodColors.blue)
+        if (segment.type === 'ram')
             this.drawRamHead(segment, x, y, size);
         else {
-            this.ctx.strokeStyle = segment.color || '#45a049';
+            this.ctx.strokeStyle = this.segmentColors[segment.type];
             this.ctx.lineWidth = 2;
             const arrowLength = size * this.config.segmentScale;
             const arrowWidth = size * this.config.segmentScale;
@@ -118,7 +125,7 @@ export class SnakeRenderer {
         const hornWidth = size * 0.2;
         
         // Draw the main head shape
-        this.ctx.strokeStyle = this.foodColors.blue;
+        this.ctx.strokeStyle = this.segmentColors.ram;
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, size/2 - 2, 0, Math.PI * 2);
@@ -154,7 +161,7 @@ export class SnakeRenderer {
         this.ctx.stroke();
 
         // Draw eyes
-        this.ctx.fillStyle = this.foodColors.blue;
+        this.ctx.fillStyle = this.segmentColors.ram;
         const eyeSize = size * 0.15;
         if (segment.lastDirection?.x === 1) {
             this.ctx.beginPath();
@@ -180,11 +187,11 @@ export class SnakeRenderer {
     }
 
     drawSnakeBody(segment: SnakeSegment, x: number, y: number, size: number): void {
-        if (segment.color === this.foodColors.orange) {
-            this.ctx.fillStyle = this.foodColors.orange;
+        if (segment.type === 'speedy') {
+            this.ctx.fillStyle = this.segmentColors.speedy;
             this.ctx.fillRect(x, y, size, size);
         } else {
-            this.ctx.strokeStyle = segment.color || '#4CAF50';
+            this.ctx.strokeStyle = this.segmentColors[segment.type];
             this.ctx.lineWidth = 1;
             const segmentLength = size * this.config.segmentScale;
             const segmentWidth = size * this.config.segmentScale;

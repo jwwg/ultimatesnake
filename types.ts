@@ -8,9 +8,10 @@ export interface Direction {
     y: number;
 }
 
+export type SegmentType = 'normal' | 'ram' | 'speedy' | 'head';
+
 export interface SnakeSegment extends Position {
-    type: 'head' | 'body';
-    color?: string;
+    type: SegmentType;
     age?: number;
     lastDirection?: Direction;
     convergence?: number;

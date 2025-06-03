@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType, SegmentType } from './types.js';
 import { defaultConfig } from './config.js';
 import { SnakeRenderer } from './SnakeRenderer.js';
 
@@ -18,11 +18,6 @@ export class SnakeGame {
     isWaiting: boolean;
     lastFoodGeneration: number;
     renderer: SnakeRenderer;
-    private readonly foodColors = {
-        red: '#ff0000',
-        blue: '#0000ff',
-        orange: '#ffa500'
-    } as const;
 
     constructor(config: GameConfig = defaultConfig) {
         this.config = config;
@@ -40,8 +35,7 @@ export class SnakeGame {
             this.snake.push({
                 x: head.x - i,
                 y: head.y,
-                type: 'body',
-                color: '#4CAF50',
+                type: 'normal',
                 age: i,
                 lastDirection: { x: 1, y: 0 },
                 convergence: 3
@@ -69,7 +63,6 @@ export class SnakeGame {
             x: Math.floor(this.tileCount.x / 2),
             y: Math.floor(this.tileCount.y / 2),
             type: 'head',
-            color: '#45a049',
             age: 0,
             lastDirection: { x: 0, y: 0 },
             convergence: 3
@@ -179,20 +172,22 @@ export class SnakeGame {
             this.updateScore();
             const consumedFood = this.foods[foodIndex];
             
-            // Shift all segment colors one position back
+            // Shift all segment types one position back
             for (let i = this.snake.length - 1; i > 0; i--) {
-                this.snake[i].color = this.snake[i - 1].color;
+                this.snake[i].type = this.snake[i - 1].type;
             }
-            // Set new head color
-            this.snake[0].color = this.foodColors[consumedFood.type];
             
-            // Add new segment at the end with the last segment's color
+            // Set new head type based on food type
+            const newHeadType: SegmentType = consumedFood.type === 'blue' ? 'ram' : 
+                                           consumedFood.type === 'orange' ? 'speedy' : 'normal';
+            this.snake[0].type = newHeadType;
+            
+            // Add new segment at the end with the last segment's type
             const lastSegment = this.snake[this.snake.length - 1];
             this.snake.push({
                 x: lastSegment.x,
                 y: lastSegment.y,
-                type: 'body',
-                color: lastSegment.color,
+                type: lastSegment.type,
                 age: 0,
                 lastDirection: lastSegment.lastDirection ? { ...lastSegment.lastDirection } : undefined,
                 convergence: lastSegment.convergence
@@ -214,8 +209,8 @@ export class SnakeGame {
         const collisionIndex = this.snake.findIndex(segment => segment.x === head.x && segment.y === head.y);
         if (collisionIndex === -1) return false;
 
-        // If the head is a ram head (blue), destroy segments after collision point
-        if (this.snake[0].color === this.renderer.foodColors.blue) {
+        // If the head is a ram type, destroy segments after collision point
+        if (this.snake[0].type === 'ram') {
             const segmentsCutOff = this.snake.length - collisionIndex;
             // Add destruction animations for each cut-off segment
             for (let i = collisionIndex; i < this.snake.length; i++) {
@@ -271,8 +266,7 @@ export class SnakeGame {
             this.snake.push({
                 x: head.x - i,
                 y: head.y,
-                type: 'body',
-                color: '#4CAF50',
+                type: 'normal',
                 age: i,
                 lastDirection: { x: 1, y: 0 },
                 convergence: 3
