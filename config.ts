@@ -1,7 +1,7 @@
 import { GameConfig } from './types';
 
 export const defaultConfig: GameConfig = {
-    gridSize: 20,
+    gridSize: 40,
     segmentScale: 0.9,
     maxFoodItems: 5,
     minFoodInterval: 500,

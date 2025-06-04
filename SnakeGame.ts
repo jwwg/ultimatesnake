@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType, SegmentType } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandType, PokerHandScore, PokerHandAnimation } from './types.js';
 import { defaultConfig } from './config.js';
 import { SnakeRenderer } from './SnakeRenderer.js';
 
@@ -18,14 +18,31 @@ export class SnakeGame {
     isWaiting: boolean;
     lastFoodGeneration: number;
     renderer: SnakeRenderer;
+    hand: Hand;
+    private pokerHandAnimations: PokerHandAnimation[] = [];
+
+    private readonly pokerHandScores: Record<PokerHandType, number> = {
+        royal_flush: 1000,
+        straight_flush: 800,
+        four_of_a_kind: 700,
+        full_house: 600,
+        flush: 500,
+        straight: 400,
+        three_of_a_kind: 300,
+        two_pair: 200,
+        pair: 100,
+        high_card: 50
+    };
 
     constructor(config: GameConfig = defaultConfig) {
         this.config = config;
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+        // Add extra height for the hand display
+        this.canvas.height = this.canvas.height + 150; // Add 150px for hand display
         this.ctx = this.canvas.getContext('2d')!;
         this.tileCount = {
             x: Math.floor(this.canvas.width / this.config.gridSize),
-            y: Math.floor(this.canvas.height / this.config.gridSize)
+            y: Math.floor((this.canvas.height - 150) / this.config.gridSize) // Adjust y count to exclude hand area
         };
         
         // Initialize snake with 10 segments
@@ -52,6 +69,7 @@ export class SnakeGame {
         this.isGameOver = false;
         this.isWaiting = true;
         this.renderer = new SnakeRenderer(this.canvas, this.ctx, this.config);
+        this.hand = { cards: [], maxSize: 5 };
 
         this.setupEventListeners();
         this.updateHighScore();
@@ -105,17 +123,88 @@ export class SnakeGame {
 
     private generateFood(): FoodItem {
         let food: FoodItem;
-        const foodTypes: FoodType[] = ['red', 'blue', 'orange'];
+        const suits: CardSuit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
+        const ranks: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
         do {
             food = {
                 x: Math.floor(Math.random() * this.tileCount.x),
                 y: Math.floor(Math.random() * this.tileCount.y),
                 createdAt: Date.now(),
-                type: foodTypes[Math.floor(Math.random() * foodTypes.length)]
+                suit: suits[Math.floor(Math.random() * suits.length)],
+                rank: ranks[Math.floor(Math.random() * ranks.length)]
             };
         } while (this.snake.some(segment => segment.x === food.x && segment.y === food.y) ||
                  (this.foods || []).some(f => f.x === food.x && f.y === food.y));
         return food;
+    }
+
+    private evaluatePokerHand(hand: Hand): PokerHandScore {
+        const cards = [...hand.cards];
+        const ranks = cards.map(card => this.getCardValue(card.rank));
+        const suits = cards.map(card => card.suit);
+        
+        // Sort cards by rank
+        cards.sort((a, b) => this.getCardValue(b.rank) - this.getCardValue(a.rank));
+        ranks.sort((a, b) => b - a);
+
+        // Check for flush
+        const isFlush = suits.every(suit => suit === suits[0]);
+
+        // Check for straight
+        const isStraight = ranks.every((rank, i) => i === 0 || rank === ranks[i - 1] - 1);
+
+        // Check for royal flush
+        if (isFlush && isStraight && ranks[0] === 14) {
+            return { type: 'royal_flush', score: this.pokerHandScores.royal_flush, cards };
+        }
+
+        // Check for straight flush
+        if (isFlush && isStraight) {
+            return { type: 'straight_flush', score: this.pokerHandScores.straight_flush, cards };
+        }
+
+        // Count occurrences of each rank
+        const rankCounts = new Map<number, number>();
+        ranks.forEach(rank => rankCounts.set(rank, (rankCounts.get(rank) || 0) + 1));
+        const counts = Array.from(rankCounts.values()).sort((a, b) => b - a);
+
+        // Check for four of a kind
+        if (counts[0] === 4) {
+            return { type: 'four_of_a_kind', score: this.pokerHandScores.four_of_a_kind, cards };
+        }
+
+        // Check for full house
+        if (counts[0] === 3 && counts[1] === 2) {
+            return { type: 'full_house', score: this.pokerHandScores.full_house, cards };
+        }
+
+        // Check for flush
+        if (isFlush) {
+            return { type: 'flush', score: this.pokerHandScores.flush, cards };
+        }
+
+        // Check for straight
+        if (isStraight) {
+            return { type: 'straight', score: this.pokerHandScores.straight, cards };
+        }
+
+        // Check for three of a kind
+        if (counts[0] === 3) {
+            return { type: 'three_of_a_kind', score: this.pokerHandScores.three_of_a_kind, cards };
+        }
+
+        // Check for two pair
+        if (counts[0] === 2 && counts[1] === 2) {
+            return { type: 'two_pair', score: this.pokerHandScores.two_pair, cards };
+        }
+
+        // Check for pair
+        if (counts[0] === 2) {
+            return { type: 'pair', score: this.pokerHandScores.pair, cards };
+        }
+
+        // High card
+        return { type: 'high_card', score: this.pokerHandScores.high_card, cards };
     }
 
     private update(): void {
@@ -128,6 +217,11 @@ export class SnakeGame {
             this.foods.push(this.generateFood());
             this.lastFoodGeneration = currentTime;
         }
+
+        // Remove expired animations
+        this.pokerHandAnimations = this.pokerHandAnimations.filter(
+            anim => currentTime - anim.startTime < 2000
+        );
 
         const lastConvergence = this.snake[0].convergence || 3;
         const convergenceChange = Math.random() < 0.5 ? -1 : 1;
@@ -168,20 +262,48 @@ export class SnakeGame {
 
         const foodIndex = this.foods.findIndex(food => newHeadX === food.x && newHeadY === food.y);
         if (foodIndex !== -1) {
-            // Calculate score based on snake length
-            const lengthBonus = Math.floor(this.snake.length * this.config.scoreLengthMultiplier);
-            this.score += this.config.scorePerFood + lengthBonus;
-            this.updateScore();
+            // Calculate score based on snake length and card rank
             const consumedFood = this.foods[foodIndex];
+            const rankValue = this.getCardValue(consumedFood.rank);
+            const lengthBonus = Math.floor(this.snake.length * this.config.scoreLengthMultiplier);
+            this.score += rankValue + lengthBonus;
+            this.updateScore();
+
+            // Add card to hand if there's space
+            if (this.hand.cards.length < this.hand.maxSize) {
+                this.hand.cards.push({
+                    suit: consumedFood.suit,
+                    rank: consumedFood.rank
+                });
+
+                // Check if hand is full and evaluate poker hand
+                if (this.hand.cards.length === this.hand.maxSize) {
+                    const pokerScore = this.evaluatePokerHand(this.hand);
+                    this.score += pokerScore.score;
+                    this.updateScore();
+                    
+                    // Create animation at the last card's position
+                    this.pokerHandAnimations.push({
+                        type: pokerScore.type,
+                        score: pokerScore.score,
+                        x: consumedFood.x,
+                        y: consumedFood.y,
+                        startTime: currentTime
+                    });
+                    
+                    // Clear the hand after scoring
+                    this.hand.cards = [];
+                }
+            }
             
             // Shift all segment types one position back
             for (let i = this.snake.length - 1; i > 0; i--) {
                 this.snake[i].type = this.snake[i - 1].type;
             }
             
-            // Set new head type based on food type
-            const newHeadType: SegmentType = consumedFood.type === 'blue' ? 'ram' : 
-                                           consumedFood.type === 'orange' ? 'speedy' : 'normal';
+            // Set new head type based on card suit and rank
+            const newHeadType: SegmentType = consumedFood.rank === 'A' ? 'ram' : 
+                                           consumedFood.suit === 'diamonds' ? 'speedy' : 'normal';
             this.snake[0].type = newHeadType;
             
             // Add new segment at the end with the last segment's type
@@ -204,6 +326,16 @@ export class SnakeGame {
                     this.draw();
                 }, this.speed);
             }
+        }
+    }
+
+    private getCardValue(rank: CardRank): number {
+        switch (rank) {
+            case 'A': return 14;
+            case 'K': return 13;
+            case 'Q': return 12;
+            case 'J': return 11;
+            default: return parseInt(rank);
         }
     }
 
@@ -231,7 +363,7 @@ export class SnakeGame {
 
     private draw(): void {
         if (this.isGameOver) return;
-        this.renderer.draw(this.snake, this.foods, this.isGameOver);
+        this.renderer.draw(this.snake, this.foods, this.isGameOver, this.hand, this.pokerHandAnimations);
     }
 
     private updateScore(): void {
@@ -281,6 +413,7 @@ export class SnakeGame {
         this.isWaiting = false;
         this.foods = [this.generateFood()];
         this.lastFoodGeneration = Date.now();
+        this.hand = { cards: [], maxSize: 5 };
         this.updateScore();
         
         this.startCountdown();
@@ -307,7 +440,7 @@ export class SnakeGame {
         const oldTileCount = { ...this.tileCount };
         this.tileCount = {
             x: Math.floor(this.canvas.width / this.config.gridSize),
-            y: Math.floor(this.canvas.height / this.config.gridSize)
+            y: Math.floor((this.canvas.height - 150) / this.config.gridSize) // Adjust y count to exclude hand area
         };
         
         const scaleX = this.tileCount.x / oldTileCount.x;

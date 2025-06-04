@@ -17,11 +17,23 @@ export interface SnakeSegment extends Position {
     convergence?: number;
 }
 
-export type FoodType = 'red' | 'blue' | 'orange';
+export type CardSuit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
+export type CardRank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
+
+export interface Card {
+    suit: CardSuit;
+    rank: CardRank;
+}
+
+export interface Hand {
+    cards: Card[];
+    maxSize: number;
+}
 
 export interface FoodItem extends Position {
     createdAt: number;
-    type: FoodType;
+    suit: CardSuit;
+    rank: CardRank;
 }
 
 export interface GameConfig {
@@ -36,4 +48,30 @@ export interface GameConfig {
     scorePerFood: number;
     ramRewardMultiplier: number;
     scoreLengthMultiplier: number;
+}
+
+export type PokerHandType = 
+    | 'royal_flush'
+    | 'straight_flush'
+    | 'four_of_a_kind'
+    | 'full_house'
+    | 'flush'
+    | 'straight'
+    | 'three_of_a_kind'
+    | 'two_pair'
+    | 'pair'
+    | 'high_card';
+
+export interface PokerHandScore {
+    type: PokerHandType;
+    score: number;
+    cards: Card[];
+}
+
+export interface PokerHandAnimation {
+    type: PokerHandType;
+    score: number;
+    x: number;
+    y: number;
+    startTime: number;
 } 

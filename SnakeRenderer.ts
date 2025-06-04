@@ -1,10 +1,11 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, FoodType, SegmentType } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation } from './types.js';
 
 export class SnakeRenderer {
-    readonly foodColors = {
-        red: '#ff0000',
-        blue: '#0000ff',
-        orange: '#ffa500'
+    readonly cardColors = {
+        hearts: '#ff0000',
+        diamonds: '#ff0000',
+        clubs: '#000000',
+        spades: '#000000'
     } as const;
 
     readonly segmentColors = {
@@ -16,22 +17,38 @@ export class SnakeRenderer {
 
     private destructionAnimations: { segment: SnakeSegment; startTime: number }[] = [];
     private readonly destructionDuration = 2000; // Animation duration in milliseconds (2 seconds)
+    readonly tileCount: { x: number; y: number };
 
     constructor(
         readonly canvas: HTMLCanvasElement,
         readonly ctx: CanvasRenderingContext2D,
         readonly config: GameConfig
-    ) {}
+    ) {
+        this.tileCount = {
+            x: Math.floor(this.canvas.width / this.config.gridSize),
+            y: Math.floor((this.canvas.height - 150) / this.config.gridSize)
+        };
+    }
 
-    draw(snake: SnakeSegment[], foods: FoodItem[], isGameOver: boolean): void {
+    draw(snake: SnakeSegment[], foods: FoodItem[], isGameOver: boolean, hand: Hand, pokerHandAnimations: PokerHandAnimation[]): void {
         if (isGameOver) return;
 
+        // Clear canvas
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw grid border
+        const gridWidth = this.tileCount.x * this.config.gridSize;
+        const gridHeight = this.tileCount.y * this.config.gridSize;
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(0, 0, gridWidth, gridHeight);
 
         this.drawSnake(snake);
         this.drawFood(foods);
         this.drawDestructionAnimations();
+        this.drawPokerHandAnimations(pokerHandAnimations);
+        this.drawHand(hand);
     }
 
     addDestructionAnimation(segment: SnakeSegment): void {
@@ -283,14 +300,40 @@ export class SnakeRenderer {
 
     drawFood(foods: FoodItem[]): void {
         foods.forEach(food => {
-            this.ctx.fillStyle = this.foodColors[food.type];
-            this.ctx.fillRect(
-                food.x * this.config.gridSize,
-                food.y * this.config.gridSize,
-                this.config.gridSize - 2,
-                this.config.gridSize - 2
-            );
+            const x = food.x * this.config.gridSize;
+            const y = food.y * this.config.gridSize;
+            const size = this.config.gridSize - 2;
+
+            // Draw card background
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(x, y, size, size);
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(x, y, size, size);
+
+            // Draw card content
+            this.ctx.fillStyle = this.cardColors[food.suit];
+            this.ctx.font = `${size * 0.4}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+
+            // Draw rank
+            this.ctx.fillText(food.rank, x + size * 0.3, y + size * 0.3);
+
+            // Draw suit symbol
+            const suitSymbol = this.getSuitSymbol(food.suit);
+            this.ctx.font = `${size * 0.5}px Arial`;
+            this.ctx.fillText(suitSymbol, x + size * 0.7, y + size * 0.7);
         });
+    }
+
+    private getSuitSymbol(suit: CardSuit): string {
+        switch (suit) {
+            case 'hearts': return '♥';
+            case 'diamonds': return '♦';
+            case 'clubs': return '♣';
+            case 'spades': return '♠';
+        }
     }
 
     drawGameOver(score: number): void {
@@ -311,5 +354,137 @@ export class SnakeRenderer {
         this.ctx.font = '50px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(count.toString(), this.canvas.width / 2, this.canvas.height / 2);
+    }
+
+    drawPokerHandAnimations(pokerHandAnimations: PokerHandAnimation[]): void {
+        const currentTime = Date.now();
+        pokerHandAnimations.forEach(anim => {
+            const elapsed = currentTime - anim.startTime;
+            const progress = elapsed / 5000; // 5 seconds total
+            if (progress >= 1) return;
+
+            // Calculate position and opacity with smoother movement
+            const y = anim.y - (progress * progress * 20); // Quadratic movement for smoother animation
+            const opacity = 1 - (progress * progress); // Quadratic fade for smoother transition
+            
+            // Draw background with larger size
+            const padding = 10;
+            const width = this.config.gridSize * 2.5;
+            const height = this.config.gridSize * 1.5;
+            this.ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.8})`;
+            this.ctx.fillRect(
+                anim.x * this.config.gridSize - width/2,
+                y * this.config.gridSize - height/2,
+                width,
+                height
+            );
+
+            // Draw text with larger font
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            this.ctx.font = 'bold 16px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            // Draw hand type
+            this.ctx.fillText(
+                anim.type.replace('_', ' ').toUpperCase(),
+                (anim.x + 0.5) * this.config.gridSize,
+                y * this.config.gridSize
+            );
+            
+            // Draw score with larger font
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.fillText(
+                `+${anim.score}`,
+                (anim.x + 0.5) * this.config.gridSize,
+                y * this.config.gridSize + this.config.gridSize * 0.4
+            );
+        });
+    }
+
+    drawHand(hand: Hand): void {
+        const cardWidth = 60;
+        const cardHeight = 90;
+        const padding = 10;
+        const startX = (this.canvas.width - (cardWidth * hand.maxSize + padding * (hand.maxSize - 1))) / 2;
+        const startY = this.tileCount.y * this.config.gridSize + 20; // Position hand below the grid
+
+        // Debug: Draw hand area boundary
+        this.ctx.fillStyle = '#ff0000'; // Bright red background
+        this.ctx.fillRect(0, startY - 10, this.canvas.width, cardHeight + 40);
+
+        // Debug: Draw hand info
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '16px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'top';
+        this.ctx.fillText(`Hand: ${hand.cards.length}/${hand.maxSize} cards`, 10, startY - 5);
+
+        // Draw each card in the hand
+        hand.cards.forEach((card, index) => {
+            const x = startX + (cardWidth + padding) * index;
+            const y = startY;
+
+            // Draw card background
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(x, y, cardWidth, cardHeight);
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(x, y, cardWidth, cardHeight);
+
+            // Draw card content
+            this.ctx.fillStyle = this.cardColors[card.suit];
+            
+            // Draw rank in top-left
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'left';
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText(card.rank, x + 5, y + 5);
+
+            // Draw suit symbol in center
+            const suitSymbol = this.getSuitSymbol(card.suit);
+            this.ctx.font = '40px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(suitSymbol, x + cardWidth/2, y + cardHeight/2);
+
+            // Draw rank in bottom-right (upside down)
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.fillText(card.rank, x + cardWidth - 5, y + cardHeight - 5);
+
+            // Debug: Draw card index
+            this.ctx.fillStyle = '#000000';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`Card ${index + 1}`, x + cardWidth/2, y + cardHeight + 15);
+        });
+
+        // Draw empty card slots
+        for (let i = hand.cards.length; i < hand.maxSize; i++) {
+            const x = startX + (cardWidth + padding) * i;
+            const y = startY;
+
+            // Debug: Draw empty slot with bright yellow
+            this.ctx.fillStyle = '#ffff00'; // Bright yellow for empty slots
+            this.ctx.fillRect(x, y, cardWidth, cardHeight);
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(x, y, cardWidth, cardHeight);
+
+            // Draw plus symbol
+            this.ctx.fillStyle = '#000000';
+            this.ctx.font = '30px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('+', x + cardWidth/2, y + cardHeight/2);
+
+            // Debug: Draw slot number
+            this.ctx.fillStyle = '#000000';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`Empty ${i + 1}`, x + cardWidth/2, y + cardHeight + 15);
+        }
     }
 } 
