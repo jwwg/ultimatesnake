@@ -48,6 +48,7 @@ export interface GameConfig {
     scorePerFood: number;
     ramRewardMultiplier: number;
     scoreLengthMultiplier: number;
+    foodExpirationTime: number;
 }
 
 export type PokerHandType = 

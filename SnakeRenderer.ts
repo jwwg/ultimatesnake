@@ -299,16 +299,29 @@ export class SnakeRenderer {
     }
 
     drawFood(foods: FoodItem[]): void {
+        const currentTime = Date.now();
         foods.forEach(food => {
+            const timeLeft = this.config.foodExpirationTime - (currentTime - food.createdAt);
+            const isExpiring = timeLeft < 2000;
+            
+            // Calculate pulsing effect for expiring food
+            const pulseIntensity = isExpiring ? 
+                Math.sin(currentTime / 100) * 0.3 + 0.7 : // Pulse between 0.4 and 1.0
+                1;
+
             const x = food.x * this.config.gridSize;
             const y = food.y * this.config.gridSize;
             const size = this.config.gridSize - 2;
 
             // Draw card background
             this.ctx.fillStyle = '#ffffff';
+            this.ctx.globalAlpha = pulseIntensity;
             this.ctx.fillRect(x, y, size, size);
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = 1;
+            this.ctx.globalAlpha = 1;
+
+            // Draw card border
+            this.ctx.strokeStyle = this.cardColors[food.suit];
+            this.ctx.lineWidth = 2;
             this.ctx.strokeRect(x, y, size, size);
 
             // Draw card content
@@ -316,14 +329,12 @@ export class SnakeRenderer {
             this.ctx.font = `${size * 0.4}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-
-            // Draw rank
-            this.ctx.fillText(food.rank, x + size * 0.3, y + size * 0.3);
-
+            this.ctx.fillText(food.rank, x + size / 2, y + size * 0.3);
+            
             // Draw suit symbol
             const suitSymbol = this.getSuitSymbol(food.suit);
             this.ctx.font = `${size * 0.5}px Arial`;
-            this.ctx.fillText(suitSymbol, x + size * 0.7, y + size * 0.7);
+            this.ctx.fillText(suitSymbol, x + size / 2, y + size * 0.7);
         });
     }
 
@@ -409,11 +420,11 @@ export class SnakeRenderer {
         const startX = (this.canvas.width - (cardWidth * hand.maxSize + padding * (hand.maxSize - 1))) / 2;
         const startY = this.tileCount.y * this.config.gridSize + 20; // Position hand below the grid
 
-        // Debug: Draw hand area boundary
-        this.ctx.fillStyle = '#ff0000'; // Bright red background
+        // Draw poker table green background
+        this.ctx.fillStyle = '#35654d'; // Classic poker table green
         this.ctx.fillRect(0, startY - 10, this.canvas.width, cardHeight + 40);
 
-        // Debug: Draw hand info
+        // Draw hand info
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '16px Arial';
         this.ctx.textAlign = 'left';
@@ -454,8 +465,8 @@ export class SnakeRenderer {
             this.ctx.textBaseline = 'bottom';
             this.ctx.fillText(card.rank, x + cardWidth - 5, y + cardHeight - 5);
 
-            // Debug: Draw card index
-            this.ctx.fillStyle = '#000000';
+            // Draw card index
+            this.ctx.fillStyle = '#ffffff';
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(`Card ${index + 1}`, x + cardWidth/2, y + cardHeight + 15);
@@ -466,22 +477,22 @@ export class SnakeRenderer {
             const x = startX + (cardWidth + padding) * i;
             const y = startY;
 
-            // Debug: Draw empty slot with bright yellow
-            this.ctx.fillStyle = '#ffff00'; // Bright yellow for empty slots
+            // Draw empty slot with a darker green
+            this.ctx.fillStyle = '#2d5540'; // Slightly darker green for empty slots
             this.ctx.fillRect(x, y, cardWidth, cardHeight);
-            this.ctx.strokeStyle = '#000000';
+            this.ctx.strokeStyle = '#ffffff';
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(x, y, cardWidth, cardHeight);
 
             // Draw plus symbol
-            this.ctx.fillStyle = '#000000';
+            this.ctx.fillStyle = '#ffffff';
             this.ctx.font = '30px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText('+', x + cardWidth/2, y + cardHeight/2);
 
-            // Debug: Draw slot number
-            this.ctx.fillStyle = '#000000';
+            // Draw slot number
+            this.ctx.fillStyle = '#ffffff';
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(`Empty ${i + 1}`, x + cardWidth/2, y + cardHeight + 15);

@@ -211,6 +211,12 @@ export class SnakeGame {
         if (this.isGameOver || this.isWaiting) return;
 
         const currentTime = Date.now();
+        
+        // Remove expired food
+        this.foods = this.foods.filter(food => 
+            currentTime - food.createdAt < this.config.foodExpirationTime
+        );
+
         if (this.foods.length < this.config.maxFoodItems && 
             currentTime - this.lastFoodGeneration > this.config.minFoodInterval &&
             Math.random() < 0.1) {
@@ -459,5 +465,11 @@ export class SnakeGame {
         }));
         
         this.draw();
+    }
+
+    private isFoodExpiring(food: FoodItem): boolean {
+        const currentTime = Date.now();
+        const timeLeft = this.config.foodExpirationTime - (currentTime - food.createdAt);
+        return timeLeft < 2000; // Show warning in last 2 seconds
     }
 } 
