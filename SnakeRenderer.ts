@@ -96,6 +96,12 @@ export class SnakeRenderer {
     }
 
     drawSnake(snake: SnakeSegment[]): void {
+        // Set up nextSegment references
+        for (let i = 0; i < snake.length - 1; i++) {
+            snake[i].nextSegment = snake[i + 1];
+        }
+        snake[snake.length - 1].nextSegment = undefined;
+
         snake.forEach(segment => {
             const x = segment.x * this.config.gridSize;
             const y = segment.y * this.config.gridSize;
@@ -106,8 +112,8 @@ export class SnakeRenderer {
             else
                 this.drawSnakeBody(segment, x, y, size);
             
-            if (segment.lastDirection)
-                this.drawDirectionLines(segment, x, y, size);
+            //if (segment.lastDirection)
+            //    this.drawDirectionLines(segment, x, y, size);
         });
     }
 
@@ -115,23 +121,38 @@ export class SnakeRenderer {
         if (segment.type === 'ram')
             this.drawRamHead(segment, x, y, size);
         else {
-            this.ctx.strokeStyle = this.segmentColors[segment.type];
-            this.ctx.lineWidth = 2;
-            const arrowLength = size * this.config.segmentScale;
-            const arrowWidth = size * this.config.segmentScale;
-            const centerX = x + size/2;
-            const centerY = y + size/2;
-            
-            this.ctx.beginPath();
-            if (segment.lastDirection?.x === 1)
-                this.drawRightArrow(x, centerY, arrowLength, arrowWidth);
-            else if (segment.lastDirection?.x === -1)
-                this.drawLeftArrow(x, centerY, arrowLength, arrowWidth, size);
-            else if (segment.lastDirection?.y === 1)
-                this.drawDownArrow(centerX, y, arrowLength, arrowWidth);
-            else if (segment.lastDirection?.y === -1)
-                this.drawUpArrow(centerX, y, arrowLength, arrowWidth, size);
-            this.ctx.stroke();
+            this.ctx.fillStyle = this.segmentColors[segment.type];
+            this.ctx.fillRect(x, y, size, size);
+
+            // Draw connecting line to next segment if it exists
+            if (segment.nextSegment) {
+                const nextX = segment.nextSegment.x * this.config.gridSize;
+                const nextY = segment.nextSegment.y * this.config.gridSize;
+                const nextCenterX = nextX + size/2;
+                const nextCenterY = nextY + size/2;
+                const centerX = x + size/2;
+                const centerY = y + size/2;
+
+                // Calculate the shortest path considering wrapping
+                let dx = nextCenterX - centerX;
+                let dy = nextCenterY - centerY;
+
+                // Check if we need to wrap horizontally
+                if (Math.abs(dx) > this.canvas.width / 2) {
+                    dx = dx > 0 ? dx - this.canvas.width : dx + this.canvas.width;
+                }
+
+                // Check if we need to wrap vertically
+                if (Math.abs(dy) > this.canvas.height / 2) {
+                    dy = dy > 0 ? dy - this.canvas.height : dy + this.canvas.height;
+                }
+
+                this.ctx.strokeStyle = '#32CD32';
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX, centerY);
+                this.ctx.lineTo(centerX + dx, centerY + dy);
+                this.ctx.stroke();
+            }
         }
     }
 
@@ -205,23 +226,45 @@ export class SnakeRenderer {
 
     drawSnakeBody(segment: SnakeSegment, x: number, y: number, size: number): void {
         if (segment.type === 'speedy') {
+            const segmentSize = size * this.config.segmentScale;
+            const offset = (size - segmentSize) / 2;
             this.ctx.fillStyle = this.segmentColors.speedy;
-            this.ctx.fillRect(x, y, size, size);
+            this.ctx.fillRect(x + offset, y + offset, segmentSize, segmentSize);
         } else {
-            this.ctx.strokeStyle = this.segmentColors[segment.type];
-            this.ctx.lineWidth = 1;
-            const segmentLength = size * this.config.segmentScale;
-            const segmentWidth = size * this.config.segmentScale;
-            const centerX = x + size/2;
-            const centerY = y + size/2;
-            
-            this.ctx.beginPath();
-            this.ctx.moveTo(centerX - segmentLength/2, centerY - segmentWidth/2);
-            this.ctx.lineTo(centerX + segmentLength/2, centerY - segmentWidth/2);
-            this.ctx.lineTo(centerX + segmentLength/2, centerY + segmentWidth/2);
-            this.ctx.lineTo(centerX - segmentLength/2, centerY + segmentWidth/2);
-            this.ctx.lineTo(centerX - segmentLength/2, centerY - segmentWidth/2);
-            this.ctx.stroke();
+            const segmentSize = size * this.config.segmentScale;
+            const offset = (size - segmentSize) / 2;
+            this.ctx.fillStyle = this.segmentColors[segment.type];
+            this.ctx.fillRect(x + offset, y + offset, segmentSize, segmentSize);
+
+            // Draw connecting line to next segment if it exists
+            if (segment.nextSegment) {
+                const nextX = segment.nextSegment.x * this.config.gridSize;
+                const nextY = segment.nextSegment.y * this.config.gridSize;
+                const nextCenterX = nextX + size/2;
+                const nextCenterY = nextY + size/2;
+                const centerX = x + size/2;
+                const centerY = y + size/2;
+
+                // Calculate the shortest path considering wrapping
+                let dx = nextCenterX - centerX;
+                let dy = nextCenterY - centerY;
+
+                // Check if we need to wrap horizontally
+                if (Math.abs(dx) > this.canvas.width / 2) {
+                    dx = dx > 0 ? dx - this.canvas.width : dx + this.canvas.width;
+                }
+
+                // Check if we need to wrap vertically
+                if (Math.abs(dy) > this.canvas.height / 2) {
+                    dy = dy > 0 ? dy - this.canvas.height : dy + this.canvas.height;
+                }
+
+                this.ctx.strokeStyle = '#32CD32';
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX, centerY);
+                this.ctx.lineTo(centerX + dx, centerY + dy);
+                this.ctx.stroke();
+            }
         }
     }
 

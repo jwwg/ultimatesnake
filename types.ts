@@ -15,6 +15,7 @@ export interface SnakeSegment extends Position {
     age?: number;
     lastDirection?: Direction;
     convergence?: number;
+    nextSegment?: SnakeSegment;
 }
 
 export type CardSuit = 'hearts' | 'diamonds' | 'clubs' | 'spades';

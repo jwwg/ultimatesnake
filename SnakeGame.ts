@@ -49,14 +49,17 @@ export class SnakeGame {
         const head = this.createInitialSnakeHead();
         this.snake = [head];
         for (let i = 1; i < 10; i++) {
-            this.snake.push({
+            const segment: SnakeSegment = {
                 x: head.x - i,
                 y: head.y,
-                type: 'normal',
+                type: 'normal' as SegmentType,
                 age: i,
                 lastDirection: { x: 1, y: 0 },
-                convergence: 3
-            });
+                convergence: 3,
+                nextSegment: undefined
+            };
+            this.snake[i-1].nextSegment = segment;
+            this.snake.push(segment);
         }
         
         this.foods = [this.generateFood()];
@@ -80,10 +83,11 @@ export class SnakeGame {
         return {
             x: Math.floor(this.tileCount.x / 2),
             y: Math.floor(this.tileCount.y / 2),
-            type: 'head',
+            type: 'head' as SegmentType,
             age: 0,
             lastDirection: { x: 0, y: 0 },
-            convergence: 3
+            convergence: 3,
+            nextSegment: undefined
         };
     }
 
@@ -257,6 +261,7 @@ export class SnakeGame {
                     };
                 }
                 if (currentSegment.age !== undefined) currentSegment.age++;
+                currentSegment.nextSegment = i < this.snake.length - 1 ? this.snake[i + 1] : undefined;
             }
         }
 
@@ -265,6 +270,7 @@ export class SnakeGame {
         this.snake[0].y = newHeadY;
         this.snake[0].lastDirection = { ...this.direction };
         this.snake[0].convergence = newConvergence;
+        this.snake[0].nextSegment = this.snake[1];
 
         const foodIndex = this.foods.findIndex(food => newHeadX === food.x && newHeadY === food.y);
         if (foodIndex !== -1) {
@@ -302,26 +308,30 @@ export class SnakeGame {
                 }
             }
             
-            // Shift all segment types one position back
-            for (let i = this.snake.length - 1; i > 0; i--) {
-                this.snake[i].type = this.snake[i - 1].type;
+            // Store the current head's type
+            const currentHeadType = this.snake[0].type;
+            
+            // Set all segments to normal type
+            for (let i = 0; i < this.snake.length; i++) {
+                this.snake[i].type = 'normal' as SegmentType;
             }
             
-            // Set new head type based on card suit and rank
-            const newHeadType: SegmentType = consumedFood.rank === 'A' ? 'ram' : 
-                                           consumedFood.suit === 'diamonds' ? 'speedy' : 'normal';
-            this.snake[0].type = newHeadType;
-            
-            // Add new segment at the end with the last segment's type
+            // Add new segment at the end
             const lastSegment = this.snake[this.snake.length - 1];
-            this.snake.push({
+            const newSegment: SnakeSegment = {
                 x: lastSegment.x,
                 y: lastSegment.y,
-                type: lastSegment.type,
+                type: 'normal' as SegmentType,
                 age: 0,
                 lastDirection: lastSegment.lastDirection ? { ...lastSegment.lastDirection } : undefined,
-                convergence: lastSegment.convergence
-            });
+                convergence: lastSegment.convergence,
+                nextSegment: undefined
+            };
+            lastSegment.nextSegment = newSegment;
+            this.snake.push(newSegment);
+
+            // Set the head type
+            this.snake[0].type = 'head' as SegmentType;
             
             this.foods.splice(foodIndex, 1);
             this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
@@ -403,14 +413,17 @@ export class SnakeGame {
         const head = this.createInitialSnakeHead();
         this.snake = [head];
         for (let i = 1; i < 10; i++) {
-            this.snake.push({
+            const segment: SnakeSegment = {
                 x: head.x - i,
                 y: head.y,
-                type: 'normal',
+                type: 'normal' as SegmentType,
                 age: i,
                 lastDirection: { x: 1, y: 0 },
-                convergence: 3
-            });
+                convergence: 3,
+                nextSegment: undefined
+            };
+            this.snake[i-1].nextSegment = segment;
+            this.snake.push(segment);
         }
         this.direction = { x: 1, y: 0 };
         this.score = 0;
