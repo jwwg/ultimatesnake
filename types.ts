@@ -29,6 +29,19 @@ export interface Card {
 export interface Hand {
     cards: Card[];
     maxSize: number;
+    lastHandScore?: {
+        type: PokerHandType;
+        baseScore: number;
+        lengthMultiplier: number;
+        finalScore: number;
+    };
+    highestHandScore?: {
+        type: PokerHandType;
+        baseScore: number;
+        lengthMultiplier: number;
+        finalScore: number;
+        setAt: number;
+    };
 }
 
 export interface FoodItem extends Position {
@@ -50,6 +63,7 @@ export interface GameConfig {
     ramRewardMultiplier: number;
     scoreLengthMultiplier: number;
     foodExpirationTime: number;
+    initialSnakeLength: number;
 }
 
 export type PokerHandType = 

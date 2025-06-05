@@ -16,10 +16,13 @@ export class SnakeGame {
     speed: number;
     isGameOver: boolean;
     isWaiting: boolean;
+    isPaused: boolean;
     lastFoodGeneration: number;
     renderer: SnakeRenderer;
     hand: Hand;
     private pokerHandAnimations: PokerHandAnimation[] = [];
+    private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number } | null = null;
+    private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number } | null = null;
 
     private readonly pokerHandScores: Record<PokerHandType, number> = {
         royal_flush: 1000,
@@ -45,10 +48,10 @@ export class SnakeGame {
             y: Math.floor((this.canvas.height - 150) / this.config.gridSize) // Adjust y count to exclude hand area
         };
         
-        // Initialize snake with 10 segments
+        // Initialize snake with configured number of segments
         const head = this.createInitialSnakeHead();
         this.snake = [head];
-        for (let i = 1; i < 10; i++) {
+        for (let i = 1; i < this.config.initialSnakeLength; i++) {
             const segment: SnakeSegment = {
                 x: head.x - i,
                 y: head.y,
@@ -71,6 +74,7 @@ export class SnakeGame {
         this.speed = this.config.initialSpeed;
         this.isGameOver = false;
         this.isWaiting = true;
+        this.isPaused = false;
         this.renderer = new SnakeRenderer(this.canvas, this.ctx, this.config);
         this.hand = { cards: [], maxSize: 5 };
 
@@ -94,6 +98,7 @@ export class SnakeGame {
     private setupEventListeners(): void {
         document.addEventListener('keydown', this.handleKeyPress.bind(this));
         document.getElementById('startButton')?.addEventListener('click', () => this.startGame());
+        document.getElementById('pauseButton')?.addEventListener('click', () => this.togglePause());
         window.addEventListener('resize', () => this.handleResize());
     }
 
@@ -102,6 +107,13 @@ export class SnakeGame {
             this.startGame();
             return;
         }
+
+        if (event.key === 'p' || event.key === 'P') {
+            this.togglePause();
+            return;
+        }
+
+        if (this.isPaused) return;
 
         const newDirection: Direction = { x: 0, y: 0 };
 
@@ -212,7 +224,7 @@ export class SnakeGame {
     }
 
     private update(): void {
-        if (this.isGameOver || this.isWaiting) return;
+        if (this.isGameOver || this.isWaiting || this.isPaused) return;
 
         const currentTime = Date.now();
         
@@ -276,7 +288,7 @@ export class SnakeGame {
         if (foodIndex !== -1) {
             // Calculate score based on snake length and card rank
             const consumedFood = this.foods[foodIndex];
-            const rankValue = this.getCardValue(consumedFood.rank);
+            const rankValue = this.config.scorePerFood;
             const lengthBonus = Math.floor(this.snake.length * this.config.scoreLengthMultiplier);
             this.score += rankValue + lengthBonus;
             this.updateScore();
@@ -291,13 +303,31 @@ export class SnakeGame {
                 // Check if hand is full and evaluate poker hand
                 if (this.hand.cards.length === this.hand.maxSize) {
                     const pokerScore = this.evaluatePokerHand(this.hand);
-                    this.score += pokerScore.score;
+                    const lengthMultiplier = Math.floor(this.snake.length * this.config.scoreLengthMultiplier);
+                    const finalScore = pokerScore.score * lengthMultiplier;
+                    this.score += finalScore;
                     this.updateScore();
+                    
+                    // Store last hand score details
+                    this.lastHandScore = {
+                        type: pokerScore.type,
+                        baseScore: pokerScore.score,
+                        lengthMultiplier,
+                        finalScore
+                    };
+
+                    // Update highest hand score if this one is higher
+                    if (!this.highestHandScore || finalScore > this.highestHandScore.finalScore) {
+                        this.highestHandScore = { 
+                            ...this.lastHandScore,
+                            setAt: Date.now()
+                        };
+                    }
                     
                     // Create animation at the last card's position
                     this.pokerHandAnimations.push({
                         type: pokerScore.type,
-                        score: pokerScore.score,
+                        score: finalScore,
                         x: consumedFood.x,
                         y: consumedFood.y,
                         startTime: currentTime
@@ -379,7 +409,13 @@ export class SnakeGame {
 
     private draw(): void {
         if (this.isGameOver) return;
-        this.renderer.draw(this.snake, this.foods, this.isGameOver, this.hand, this.pokerHandAnimations);
+        const handWithScore = { 
+            ...this.hand, 
+            lastHandScore: this.lastHandScore || undefined,
+            highestHandScore: this.highestHandScore || undefined
+        };
+        this.renderer.draw(this.snake, this.foods, this.isGameOver, handWithScore, this.pokerHandAnimations);
+        if (this.isPaused) this.renderer.drawPaused();
     }
 
     private updateScore(): void {
@@ -403,16 +439,16 @@ export class SnakeGame {
         if (this.gameLoop) clearInterval(this.gameLoop);
         
         this.draw();
-        this.renderer.drawGameOver(this.score);
+        this.renderer.drawGameOver(this.score, this.highestHandScore || undefined);
     }
 
     private startGame(): void {
         if (this.gameLoop) clearInterval(this.gameLoop);
         
-        // Initialize snake with 10 segments
+        // Initialize snake with configured number of segments
         const head = this.createInitialSnakeHead();
         this.snake = [head];
-        for (let i = 1; i < 10; i++) {
+        for (let i = 1; i < this.config.initialSnakeLength; i++) {
             const segment: SnakeSegment = {
                 x: head.x - i,
                 y: head.y,
@@ -433,6 +469,8 @@ export class SnakeGame {
         this.foods = [this.generateFood()];
         this.lastFoodGeneration = Date.now();
         this.hand = { cards: [], maxSize: 5 };
+        this.lastHandScore = null;
+        this.highestHandScore = null;
         this.updateScore();
         
         this.startCountdown();
@@ -484,5 +522,25 @@ export class SnakeGame {
         const currentTime = Date.now();
         const timeLeft = this.config.foodExpirationTime - (currentTime - food.createdAt);
         return timeLeft < 2000; // Show warning in last 2 seconds
+    }
+
+    private togglePause(): void {
+        if (this.isGameOver || this.isWaiting) return;
+        
+        this.isPaused = !this.isPaused;
+        const pauseButton = document.getElementById('pauseButton');
+        if (pauseButton) pauseButton.textContent = this.isPaused ? 'Resume' : 'Pause';
+        
+        if (this.isPaused) {
+            if (this.gameLoop) clearInterval(this.gameLoop);
+            this.gameLoop = null;
+        } else {
+            this.gameLoop = window.setInterval(() => {
+                this.update();
+                this.draw();
+            }, this.speed);
+        }
+        
+        this.draw();
     }
 } 

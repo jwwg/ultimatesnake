@@ -56,4 +56,30 @@ h1 {
 
 #startButton:active {
     transform: scale(0.98);
+}
+
+.button-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+#pauseButton {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+    background: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+#pauseButton:hover {
+    background: #f57c00;
+}
+
+#pauseButton:active {
+    transform: scale(0.98);
 } 
