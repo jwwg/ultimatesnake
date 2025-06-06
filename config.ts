@@ -18,5 +18,5 @@ export const defaultConfig: GameConfig = {
     arrowSpawnInterval: 5000, // How often arrows spawn (in milliseconds)
     arrowWidth: 40, // Width of the arrow
     arrowHeight: 20, // Height of the arrow
-    maxMultiplierExponent: 3 // Maximum value for the multiplier exponent
+    maxMultiplierExponent: 10 // Maximum value for the multiplier exponent
 }; 

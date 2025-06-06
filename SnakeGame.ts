@@ -144,14 +144,15 @@ export class SnakeGame {
                 const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
                 const lengthMultiplier = Math.floor(this.snakeManager.getSnake().length * this.config.scoreLengthMultiplier);
                 const multiplierExponent = this.gameState.getMultiplierExponent();
-                const finalScore = pokerScore.score * Math.pow(lengthMultiplier, multiplierExponent);
+                const finalMultiplier = Math.pow(lengthMultiplier, multiplierExponent);
+                const finalScore = pokerScore.score * finalMultiplier;
                 this.gameState.addScore(finalScore);
                 
                 // Store last hand score details
                 this.gameState.setLastHandScore({
                     type: pokerScore.type,
                     baseScore: pokerScore.score,
-                    lengthMultiplier,
+                    lengthMultiplier: finalMultiplier,
                     finalScore
                 });
                 
@@ -209,7 +210,8 @@ export class SnakeGame {
             handWithScore,
             this.gameState.getPokerHandAnimations(),
             this.arrowManager.getArrows(),
-            this.gameState.getExplosionAnimations()
+            this.gameState.getExplosionAnimations(),
+            this.gameState.getMultiplierExponent()
         );
         
         if (this.gameState.isPausedState()) this.renderer.drawPaused();

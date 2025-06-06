@@ -37,7 +37,8 @@ export class SnakeRenderer {
         hand: Hand,
         pokerHandAnimations: PokerHandAnimation[],
         arrows: Arrow[],
-        explosionAnimations: ExplosionAnimation[]
+        explosionAnimations: ExplosionAnimation[],
+        multiplierExponent: number
     ): void {
         if (isGameOver) return;
 
@@ -59,7 +60,7 @@ export class SnakeRenderer {
         this.drawArrows(arrows);
         this.drawExplosionAnimations(explosionAnimations);
         this.drawHand(hand);
-        this.drawLengthMultiplier(snake.length);
+        this.drawLengthMultiplier(snake.length, multiplierExponent);
     }
 
     private drawArrows(arrows: Arrow[]): void {
@@ -85,13 +86,13 @@ export class SnakeRenderer {
         this.ctx.restore();
     }
 
-    private drawLengthMultiplier(snakeLength: number): void {
-        const multiplier = Math.floor(snakeLength * this.config.scoreLengthMultiplier);
+    private drawLengthMultiplier(snakeLength: number, multiplierExponent: number): void {
+        const multiplier = Math.pow(this.config.scoreLengthMultiplier * snakeLength, multiplierExponent);
         this.ctx.fillStyle = '#ffff00'; // Bright yellow
         this.ctx.font = 'bold 20px Arial';
         this.ctx.textAlign = 'right';
         this.ctx.textBaseline = 'top';
-        this.ctx.fillText(`x${multiplier}`, this.canvas.width - 10, 10);
+        this.ctx.fillText(`x${multiplier.toFixed(2)}`, this.canvas.width - 10, 10);
     }
 
     addDestructionAnimation(segment: SnakeSegment): void {
@@ -433,91 +434,6 @@ export class SnakeRenderer {
         }
     }
 
-    drawGameOver(score: number, highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number }): void {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '30px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 60);
-        this.ctx.font = '24px Arial';
-        this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 - 20);
-
-        if (highestHandScore) {
-            this.ctx.font = '20px Arial';
-            this.ctx.fillText(`Best Hand: ${highestHandScore.type.replace('_', ' ').toUpperCase()}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
-            this.ctx.fillText(`Base Score: ${highestHandScore.baseScore}`, this.canvas.width / 2, this.canvas.height / 2 + 50);
-            this.ctx.fillText(`Length Multiplier: ${highestHandScore.lengthMultiplier}`, this.canvas.width / 2, this.canvas.height / 2 + 80);
-            this.ctx.fillText(`Hand Score: ${highestHandScore.finalScore}`, this.canvas.width / 2, this.canvas.height / 2 + 110);
-        }
-    }
-
-    drawCountdown(count: number): void {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '50px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(count.toString(), this.canvas.width / 2, this.canvas.height / 2);
-    }
-
-    drawPaused(): void {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '30px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2 - 30);
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText('Press P or click Pause to resume', this.canvas.width / 2, this.canvas.height / 2 + 10);
-    }
-
-    drawPokerHandAnimations(pokerHandAnimations: PokerHandAnimation[]): void {
-        const currentTime = Date.now();
-        pokerHandAnimations.forEach(anim => {
-            const elapsed = currentTime - anim.startTime;
-            const progress = elapsed / 5000; // 5 seconds total
-            if (progress >= 1) return;
-
-            // Calculate position and opacity with smoother movement
-            const y = anim.y - (progress * progress * 20); // Quadratic movement for smoother animation
-            const opacity = 1 - (progress * progress); // Quadratic fade for smoother transition
-            
-            // Draw background with larger size
-            const padding = 10;
-            const width = this.config.gridSize * 2.5;
-            const height = this.config.gridSize * 1.5;
-            this.ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.8})`;
-            this.ctx.fillRect(
-                anim.x * this.config.gridSize - width/2,
-                y * this.config.gridSize - height/2,
-                width,
-                height
-            );
-
-            // Draw text with larger font
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
-            this.ctx.font = 'bold 16px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            
-            // Draw hand type
-            this.ctx.fillText(
-                anim.type.replace('_', ' ').toUpperCase(),
-                (anim.x + 0.5) * this.config.gridSize,
-                y * this.config.gridSize
-            );
-            
-            // Draw score with larger font
-            this.ctx.font = 'bold 20px Arial';
-            this.ctx.fillText(
-                `+${anim.score}`,
-                (anim.x + 0.5) * this.config.gridSize,
-                y * this.config.gridSize + this.config.gridSize * 0.4
-            );
-        });
-    }
-
     drawHand(hand: Hand): void {
         const cardWidth = 60;
         const cardHeight = 90;
@@ -531,15 +447,7 @@ export class SnakeRenderer {
 
         // Draw last hand score if available
         if (hand.lastHandScore) {
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '14px Arial';
-            this.ctx.textAlign = 'left';
-            this.ctx.textBaseline = 'top';
-            this.ctx.fillText('Last Hand Score:', 10, startY - 5);
-            this.ctx.fillText(`Hand Type: ${hand.lastHandScore.type.replace('_', ' ').toUpperCase()}`, 10, startY + 15);
-            this.ctx.fillText(`Base Score: ${hand.lastHandScore.baseScore}`, 10, startY + 35);
-            this.ctx.fillText(`Length Multiplier: ${hand.lastHandScore.lengthMultiplier}`, 10, startY + 55);
-            this.ctx.fillText(`Final Score: ${hand.lastHandScore.finalScore}`, 10, startY + 75);
+            this.drawHandScoreDetails(hand.lastHandScore, 10, startY - 5, 'left', '#ffffff');
         }
 
         // Draw highest hand score if available
@@ -554,17 +462,8 @@ export class SnakeRenderer {
             }
             
             // Create a gradient between white and yellow based on flash intensity
-            // Keep red at 255, reduce green and blue to create yellow
-            this.ctx.fillStyle = `rgb(255, ${255 - Math.floor(flashIntensity * 100)}, ${255 - Math.floor(flashIntensity * 100)})`;
-            this.ctx.font = '14px Arial';
-            this.ctx.textAlign = 'right';
-            this.ctx.textBaseline = 'top';
-            const rightX = this.canvas.width - 10;
-            this.ctx.fillText('Highest Hand Score:', rightX, startY - 5);
-            this.ctx.fillText(`Hand Type: ${hand.highestHandScore.type.replace('_', ' ').toUpperCase()}`, rightX, startY + 15);
-            this.ctx.fillText(`Base Score: ${hand.highestHandScore.baseScore}`, rightX, startY + 35);
-            this.ctx.fillText(`Length Multiplier: ${hand.highestHandScore.lengthMultiplier}`, rightX, startY + 55);
-            this.ctx.fillText(`Final Score: ${hand.highestHandScore.finalScore}`, rightX, startY + 75);
+            const flashColor = `rgb(255, ${255 - Math.floor(flashIntensity * 100)}, ${255 - Math.floor(flashIntensity * 100)})`;
+            this.drawHandScoreDetails(hand.highestHandScore, this.canvas.width - 10, startY - 5, 'right', flashColor);
         }
 
         // Draw hand info
@@ -640,6 +539,113 @@ export class SnakeRenderer {
             this.ctx.textAlign = 'center';
             this.ctx.fillText(`Empty ${i + 1}`, x + cardWidth/2, y + cardHeight + 15);
         }
+    }
+
+    private drawHandScoreDetails(
+        score: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number },
+        x: number,
+        y: number,
+        align: 'left' | 'right' | 'center',
+        color: string
+    ): void {
+        this.ctx.fillStyle = color;
+        this.ctx.font = '14px Arial';
+        this.ctx.textAlign = align;
+        this.ctx.textBaseline = 'top';
+        
+        const prefix = align === 'left' ? '' : align === 'right' ? 'Highest ' : 'Best ';
+        this.ctx.fillText(`${prefix}Hand Score:`, x, y);
+        this.ctx.fillText(`Hand Type: ${score.type.replace('_', ' ').toUpperCase()}`, x, y + 20);
+        this.ctx.fillText(`Base Score: ${score.baseScore}`, x, y + 40);
+        this.ctx.fillText(`Length Multiplier: ${score.lengthMultiplier}`, x, y + 60);
+        this.ctx.fillText(`Final Score: ${score.finalScore}`, x, y + 80);
+    }
+
+    drawGameOver(score: number, highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number }): void {
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 60);
+        this.ctx.font = '24px Arial';
+        this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 - 20);
+
+        if (highestHandScore) {
+            this.drawHandScoreDetails(
+                highestHandScore,
+                this.canvas.width / 2,
+                this.canvas.height / 2 + 20,
+                'center',
+                '#ffffff'
+            );
+        }
+    }
+
+    drawCountdown(count: number): void {
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '50px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(count.toString(), this.canvas.width / 2, this.canvas.height / 2);
+    }
+
+    drawPaused(): void {
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '30px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2 - 30);
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText('Press P or click Pause to resume', this.canvas.width / 2, this.canvas.height / 2 + 10);
+    }
+
+    drawPokerHandAnimations(pokerHandAnimations: PokerHandAnimation[]): void {
+        const currentTime = Date.now();
+        pokerHandAnimations.forEach(anim => {
+            const elapsed = currentTime - anim.startTime;
+            const progress = elapsed / 5000; // 5 seconds total
+            if (progress >= 1) return;
+
+            // Calculate position and opacity with smoother movement
+            const y = anim.y - (progress * progress * 20); // Quadratic movement for smoother animation
+            const opacity = 1 - (progress * progress); // Quadratic fade for smoother transition
+            
+            // Draw background with larger size
+            const padding = 10;
+            const width = this.config.gridSize * 2.5;
+            const height = this.config.gridSize * 1.5;
+            this.ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.8})`;
+            this.ctx.fillRect(
+                anim.x * this.config.gridSize - width/2,
+                y * this.config.gridSize - height/2,
+                width,
+                height
+            );
+
+            // Draw text with larger font
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            this.ctx.font = 'bold 16px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            // Draw hand type
+            this.ctx.fillText(
+                anim.type.replace('_', ' ').toUpperCase(),
+                (anim.x + 0.5) * this.config.gridSize,
+                y * this.config.gridSize
+            );
+            
+            // Draw score with larger font
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.fillText(
+                `+${anim.score}`,
+                (anim.x + 0.5) * this.config.gridSize,
+                y * this.config.gridSize + this.config.gridSize * 0.4
+            );
+        });
     }
 
     private drawExplosionAnimations(explosions: ExplosionAnimation[]): void {
