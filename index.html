@@ -5,20 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ultimate Snake</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="game-container">
-        <h1>Ultimate Snake</h1>
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
-        <div class="score-container">
-            <p>Score: <span id="score">0</span></p>
-            <p>High Score: <span id="highScore">0</span></p>
+        <div class="header">
+            <h1 align="left">Ultimate Snake</h1>
+            <i id="settingsIcon" class="fas fa-cog"></i>
         </div>
+        <div class="score-container">
+            Score: <span id="score">0</span> | Multiplier: <span id="multiplier">1x</span> | High Score: <span id="highScore">0</span> | <span id="cardsRemaining">Cards: 52</span>
+        </div>
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
         <div class="button-container">
             <button id="startButton">Start Game (Space)</button>
             <button id="pauseButton">Pause (P)</button>
         </div>
     </div>
+
+    <div id="settingsDialog" class="dialog">
+        <div class="dialog-content">
+            <h2>Settings</h2>
+            <button id="resetHighScore">Reset High Score</button>
+            <button id="closeDialog">Close</button>
+        </div>
+    </div>
+
     <script type="module" src="dist/index.js"></script>
 </body>
 </html> 

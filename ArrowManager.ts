@@ -2,7 +2,6 @@ import { Arrow, Position, GameConfig } from './types.js';
 
 interface ArrowManagerConfig {
     arrowSpeed: number;
-    arrowSpawnInterval: number;
     arrowWidth: number;
     arrowHeight: number;
     gridSize: number;
@@ -10,7 +9,6 @@ interface ArrowManagerConfig {
 
 export class ArrowManager {
     private arrows: Arrow[] = [];
-    private spawnInterval: number | null = null;
     private readonly config: ArrowManagerConfig;
     private readonly tileCount: { x: number; y: number };
 
@@ -19,19 +17,18 @@ export class ArrowManager {
         this.config = config;
     }
 
-    startSpawning(): void {
-        if (this.spawnInterval) return;
+    spawnArrow(): void {
+        const y = Math.floor(Math.random() * this.tileCount.y);
+        const gridY = y * this.config.gridSize;
+        const centeredY = gridY + (this.config.gridSize - this.config.arrowHeight) / 2;
         
-        this.spawnInterval = window.setInterval(() => {
-            this.spawnArrow();
-        }, this.config.arrowSpawnInterval);
-    }
-
-    stopSpawning(): void {
-        if (this.spawnInterval) {
-            clearInterval(this.spawnInterval);
-            this.spawnInterval = null;
-        }
+        this.arrows.push({
+            x: -this.config.arrowWidth,
+            y: centeredY,
+            speed: this.config.arrowSpeed,
+            width: this.config.arrowWidth,
+            height: this.config.arrowHeight
+        });
     }
 
     update(): void {
@@ -65,21 +62,6 @@ export class ArrowManager {
     }
 
     reset(): void {
-        this.stopSpawning();
         this.arrows = [];
-    }
-
-    private spawnArrow(): void {
-        const y = Math.floor(Math.random() * this.tileCount.y);
-        const gridY = y * this.config.gridSize;
-        const centeredY = gridY + (this.config.gridSize - this.config.arrowHeight) / 2;
-        
-        this.arrows.push({
-            x: -this.config.arrowWidth,
-            y: centeredY,
-            speed: this.config.arrowSpeed,
-            width: this.config.arrowWidth,
-            height: this.config.arrowHeight
-        });
     }
 } 

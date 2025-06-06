@@ -20,6 +20,11 @@ export class SnakeGame {
     private gameState: GameState;
     private pokerHandEvaluator: PokerHandEvaluator;
     private arrowManager: ArrowManager;
+    private scoreElement: HTMLElement;
+    private highScoreElement: HTMLElement;
+    private multiplierElement: HTMLElement;
+    private cardsRemainingElement: HTMLElement;
+    private readonly LOW_CARDS_WARNING_THRESHOLD = 5;
 
     constructor(config: GameConfig = defaultConfig) {
         this.config = config;
@@ -43,7 +48,6 @@ export class SnakeGame {
         });
         this.arrowManager = new ArrowManager(this.tileCount, {
             arrowSpeed: this.config.arrowSpeed,
-            arrowSpawnInterval: this.config.arrowSpawnInterval,
             arrowWidth: this.config.arrowWidth,
             arrowHeight: this.config.arrowHeight,
             gridSize: this.config.gridSize
@@ -51,7 +55,15 @@ export class SnakeGame {
         this.gameState = new GameState();
         this.pokerHandEvaluator = new PokerHandEvaluator();
 
+        // Initialize score display elements
+        this.scoreElement = document.getElementById('score')!;
+        this.highScoreElement = document.getElementById('highScore')!;
+        this.multiplierElement = document.getElementById('multiplier')!;
+        this.cardsRemainingElement = document.getElementById('cardsRemaining')!;
+
         this.setupEventListeners();
+        this.updateScoreDisplay();
+        this.updateCardsRemainingDisplay();
         this.draw();
     }
 
@@ -97,8 +109,35 @@ export class SnakeGame {
         }
     }
 
+    private updateScoreDisplay(): void {
+        this.scoreElement.textContent = this.gameState.getScore().toString();
+        this.highScoreElement.textContent = this.gameState.getHighScore().toString();
+        this.multiplierElement.textContent = `${this.gameState.getMultiplier(this.snakeManager.getSnake().length)}x`;
+    }
+
+    private updateCardsRemainingDisplay(): void {
+        const remainingCards = this.foodManager.getRemainingCards();
+        this.cardsRemainingElement.textContent = `Cards: ${remainingCards}`;
+        
+        // Add warning class if cards are low
+        if (remainingCards <= this.LOW_CARDS_WARNING_THRESHOLD) {
+            this.cardsRemainingElement.classList.add('warning');
+        } else {
+            this.cardsRemainingElement.classList.remove('warning');
+        }
+    }
+
     private update(): void {
         if (this.gameState.isGameOverState() || this.gameState.isWaitingState() || this.gameState.isPausedState()) return;
+
+        // Update cards remaining display
+        this.updateCardsRemainingDisplay();
+
+        // Check if deck is empty
+        if (this.foodManager.getIsDeckEmpty()) {
+            this.gameOver('deck');
+            return;
+        }
 
         // Update arrows
         this.arrowManager.update();
@@ -109,6 +148,7 @@ export class SnakeGame {
         if (hitArrow) {
             this.gameState.addExplosionAnimation(hitArrow.x + hitArrow.width / 2, hitArrow.y + hitArrow.height / 2);
             this.gameState.increaseMultiplierExponent(this.config.maxMultiplierExponent);
+            this.updateScoreDisplay();
         }
 
         // Update food
@@ -132,6 +172,7 @@ export class SnakeGame {
             const rankValue = this.config.scorePerFood;
             const lengthBonus = Math.floor(this.snakeManager.getSnake().length * this.config.scoreLengthMultiplier);
             this.gameState.addScore(rankValue + lengthBonus);
+            this.updateScoreDisplay();
 
             // Add card to hand if there's space
             this.gameState.addCardToHand({
@@ -142,11 +183,10 @@ export class SnakeGame {
             // Check if hand is full and evaluate poker hand
             if (this.gameState.getHand().cards.length === this.gameState.getHand().maxSize) {
                 const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
-                const lengthMultiplier = Math.floor(this.snakeManager.getSnake().length * this.config.scoreLengthMultiplier);
-                const multiplierExponent = this.gameState.getMultiplierExponent();
-                const finalMultiplier = Math.pow(lengthMultiplier, multiplierExponent);
+                const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
                 const finalScore = pokerScore.score * finalMultiplier;
                 this.gameState.addScore(finalScore);
+                this.updateScoreDisplay();
                 
                 // Store last hand score details
                 this.gameState.setLastHandScore({
@@ -164,6 +204,9 @@ export class SnakeGame {
                     y: food.y,
                     startTime: Date.now()
                 });
+                
+                // Spawn arrows when a hand is completed
+                this.arrowManager.spawnArrow();
                 
                 // Clear the hand after scoring
                 this.gameState.clearHand();
@@ -217,20 +260,23 @@ export class SnakeGame {
         if (this.gameState.isPausedState()) this.renderer.drawPaused();
     }
 
-    private gameOver(): void {
+    private gameOver(reason: 'collision' | 'deck' = 'collision'): void {
         this.gameState.setGameOver();
         if (this.gameLoop) clearInterval(this.gameLoop);
-        this.arrowManager.stopSpawning();
         
         this.draw();
-        this.renderer.drawGameOver(this.gameState.getScore(), this.gameState.getHighestHandScore() || undefined);
+        this.renderer.drawGameOver(
+            this.gameState.getScore(), 
+            this.gameState.getHighestHandScore() || undefined,
+            reason === 'deck' ? 'Game Over - Deck Empty!' : undefined
+        );
     }
 
     private startGame(): void {
         if (this.gameLoop) clearInterval(this.gameLoop);
         
         this.snakeManager.reset(this.config.initialSnakeLength);
-        this.gameState.reset();
+        this.gameState.reset(this.config.scoreLengthMultiplier);
         this.speed = this.config.initialSpeed;
         this.foodManager = new FoodManager(this.tileCount, {
             maxFoodItems: this.config.maxFoodItems,
@@ -238,7 +284,8 @@ export class SnakeGame {
             foodExpirationTime: this.config.foodExpirationTime
         });
         this.arrowManager.reset();
-        
+        this.updateScoreDisplay();
+        this.updateCardsRemainingDisplay();
         this.startCountdown();
     }
 
@@ -252,7 +299,6 @@ export class SnakeGame {
             if (count < 0) {
                 clearInterval(countdownInterval);
                 this.gameState.setWaiting(false);
-                this.arrowManager.startSpawning();
                 this.gameLoop = window.setInterval(() => {
                     this.update();
                     this.draw();

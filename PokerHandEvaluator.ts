@@ -2,16 +2,16 @@ import { Card, CardRank, Hand, PokerHandScore, PokerHandType } from './types.js'
 
 export class PokerHandEvaluator {
     private readonly pokerHandScores: Record<PokerHandType, number> = {
-        royal_flush: 1000,
-        straight_flush: 800,
-        four_of_a_kind: 700,
-        full_house: 600,
-        flush: 500,
-        straight: 400,
-        three_of_a_kind: 300,
-        two_pair: 200,
-        pair: 100,
-        high_card: 50
+        royal_flush: 5120,
+        straight_flush: 2560,
+        four_of_a_kind: 1280,
+        full_house: 640,
+        flush: 320,
+        straight: 160,
+        three_of_a_kind: 80,
+        two_pair: 40,
+        pair: 20,
+        high_card: 10
     };
 
     evaluatePokerHand(hand: Hand): PokerHandScore {

@@ -71,7 +71,6 @@ export interface GameConfig {
     foodExpirationTime: number;
     initialSnakeLength: number;
     arrowSpeed: number;
-    arrowSpawnInterval: number;
     arrowWidth: number;
     arrowHeight: number;
     maxMultiplierExponent: number;

@@ -12,6 +12,8 @@ export class GameState {
     private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number } | null = null;
     private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number } | null = null;
     private multiplierExponent: number = 1;
+    private multiplierDeduction: number = 0;
+    private scoreLengthMultiplier: number = 1;
 
     constructor() {
         this.highScore = Number(localStorage.getItem('snakeHighScore')) || 0;
@@ -22,7 +24,7 @@ export class GameState {
     }
 
     getHighScore(): number {
-        return this.highScore;
+        return Number(localStorage.getItem('snakeHighScore')) || 0;
     }
 
     getHand(): Hand {
@@ -49,6 +51,10 @@ export class GameState {
         return this.multiplierExponent;
     }
 
+    getMultiplier(snakeLength: number) {
+        return snakeLength * this.scoreLengthMultiplier * this.multiplierExponent - this.multiplierDeduction;
+    }
+
     isGameOverState(): boolean {
         return this.isGameOver;
     }
@@ -63,10 +69,6 @@ export class GameState {
 
     addScore(points: number): void {
         this.score += points;
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            localStorage.setItem('snakeHighScore', this.highScore.toString());
-        }
     }
 
     addCardToHand(card: Card): void {
@@ -102,6 +104,10 @@ export class GameState {
 
     setGameOver(): void {
         this.isGameOver = true;
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('snakeHighScore', this.highScore.toString());
+        }
     }
 
     setWaiting(waiting: boolean): void {
@@ -112,8 +118,9 @@ export class GameState {
         this.isPaused = !this.isPaused;
     }
 
-    reset(): void {
+    reset(scoreLengthMultiplier: number): void {
         this.score = 0;
+        this.highScore = 0;
         this.isGameOver = false;
         this.isWaiting = true;
         this.isPaused = false;
@@ -123,6 +130,9 @@ export class GameState {
         this.pokerHandAnimations = [];
         this.explosionAnimations = [];
         this.multiplierExponent = 1;
+        this.multiplierDeduction = 0;
+        this.scoreLengthMultiplier = scoreLengthMultiplier;
+        localStorage.removeItem('snakeHighScore');
     }
 
     increaseMultiplierExponent(maxValue: number): void {

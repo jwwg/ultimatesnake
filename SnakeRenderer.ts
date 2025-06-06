@@ -60,7 +60,6 @@ export class SnakeRenderer {
         this.drawArrows(arrows);
         this.drawExplosionAnimations(explosionAnimations);
         this.drawHand(hand);
-        this.drawLengthMultiplier(snake.length, multiplierExponent);
     }
 
     private drawArrows(arrows: Arrow[]): void {
@@ -86,14 +85,6 @@ export class SnakeRenderer {
         this.ctx.restore();
     }
 
-    private drawLengthMultiplier(snakeLength: number, multiplierExponent: number): void {
-        const multiplier = Math.pow(this.config.scoreLengthMultiplier * snakeLength, multiplierExponent);
-        this.ctx.fillStyle = '#ffff00'; // Bright yellow
-        this.ctx.font = 'bold 20px Arial';
-        this.ctx.textAlign = 'right';
-        this.ctx.textBaseline = 'top';
-        this.ctx.fillText(`x${multiplier.toFixed(2)}`, this.canvas.width - 10, 10);
-    }
 
     addDestructionAnimation(segment: SnakeSegment): void {
         this.destructionAnimations.push({
@@ -557,17 +548,21 @@ export class SnakeRenderer {
         this.ctx.fillText(`${prefix}Hand Score:`, x, y);
         this.ctx.fillText(`Hand Type: ${score.type.replace('_', ' ').toUpperCase()}`, x, y + 20);
         this.ctx.fillText(`Base Score: ${score.baseScore}`, x, y + 40);
-        this.ctx.fillText(`Length Multiplier: ${score.lengthMultiplier}`, x, y + 60);
+        this.ctx.fillText(`Multiplier: ${score.lengthMultiplier}`, x, y + 60);
         this.ctx.fillText(`Final Score: ${score.finalScore}`, x, y + 80);
     }
 
-    drawGameOver(score: number, highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number }): void {
+    drawGameOver(
+        score: number, 
+        highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number },
+        message?: string
+    ): void {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 60);
+        this.ctx.fillText(message || 'Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 60);
         this.ctx.font = '24px Arial';
         this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 - 20);
 
