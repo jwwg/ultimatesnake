@@ -5,6 +5,7 @@ import { PokerHandEvaluator } from './PokerHandEvaluator.js';
 import { FoodManager } from './FoodManager.js';
 import { SnakeManager } from './SnakeManager.js';
 import { GameState } from './GameState.js';
+import { ArrowManager } from './ArrowManager.js';
 
 export class SnakeGame {
     canvas: HTMLCanvasElement;
@@ -18,16 +19,16 @@ export class SnakeGame {
     private foodManager: FoodManager;
     private gameState: GameState;
     private pokerHandEvaluator: PokerHandEvaluator;
+    private arrowManager: ArrowManager;
 
     constructor(config: GameConfig = defaultConfig) {
         this.config = config;
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-        // Add extra height for the hand display
-        this.canvas.height = this.canvas.height + 150; // Add 150px for hand display
+        this.canvas.height = this.canvas.height + 150;
         this.ctx = this.canvas.getContext('2d')!;
         this.tileCount = {
             x: Math.floor(this.canvas.width / this.config.gridSize),
-            y: Math.floor((this.canvas.height - 150) / this.config.gridSize) // Adjust y count to exclude hand area
+            y: Math.floor((this.canvas.height - 150) / this.config.gridSize)
         };
         
         this.speed = this.config.initialSpeed;
@@ -39,6 +40,13 @@ export class SnakeGame {
             maxFoodItems: this.config.maxFoodItems,
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
+        });
+        this.arrowManager = new ArrowManager(this.tileCount, {
+            arrowSpeed: this.config.arrowSpeed,
+            arrowSpawnInterval: this.config.arrowSpawnInterval,
+            arrowWidth: this.config.arrowWidth,
+            arrowHeight: this.config.arrowHeight,
+            gridSize: this.config.gridSize
         });
         this.gameState = new GameState();
         this.pokerHandEvaluator = new PokerHandEvaluator();
@@ -92,11 +100,23 @@ export class SnakeGame {
     private update(): void {
         if (this.gameState.isGameOverState() || this.gameState.isWaitingState() || this.gameState.isPausedState()) return;
 
+        // Update arrows
+        this.arrowManager.update();
+
+        // Check for arrow collision with snake head
+        const snakeHead = this.snakeManager.getSnake()[0];
+        const hitArrow = this.arrowManager.checkCollision(snakeHead);
+        if (hitArrow) {
+            this.gameState.addExplosionAnimation(hitArrow.x + hitArrow.width / 2, hitArrow.y + hitArrow.height / 2);
+            this.gameState.increaseMultiplierExponent(this.config.maxMultiplierExponent);
+        }
+
         // Update food
         this.foodManager.update(this.snakeManager.getSnakePositions());
 
-        // Update poker hand animations
+        // Update animations
         this.gameState.updatePokerHandAnimations();
+        this.gameState.updateExplosionAnimations();
 
         // Move snake and check for collision
         const { newHead, collision } = this.snakeManager.move();
@@ -123,7 +143,8 @@ export class SnakeGame {
             if (this.gameState.getHand().cards.length === this.gameState.getHand().maxSize) {
                 const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
                 const lengthMultiplier = Math.floor(this.snakeManager.getSnake().length * this.config.scoreLengthMultiplier);
-                const finalScore = pokerScore.score * lengthMultiplier;
+                const multiplierExponent = this.gameState.getMultiplierExponent();
+                const finalScore = pokerScore.score * Math.pow(lengthMultiplier, multiplierExponent);
                 this.gameState.addScore(finalScore);
                 
                 // Store last hand score details
@@ -186,7 +207,9 @@ export class SnakeGame {
             this.foodManager.getFoods(),
             this.gameState.isGameOverState(),
             handWithScore,
-            this.gameState.getPokerHandAnimations()
+            this.gameState.getPokerHandAnimations(),
+            this.arrowManager.getArrows(),
+            this.gameState.getExplosionAnimations()
         );
         
         if (this.gameState.isPausedState()) this.renderer.drawPaused();
@@ -195,6 +218,7 @@ export class SnakeGame {
     private gameOver(): void {
         this.gameState.setGameOver();
         if (this.gameLoop) clearInterval(this.gameLoop);
+        this.arrowManager.stopSpawning();
         
         this.draw();
         this.renderer.drawGameOver(this.gameState.getScore(), this.gameState.getHighestHandScore() || undefined);
@@ -211,6 +235,7 @@ export class SnakeGame {
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
         });
+        this.arrowManager.reset();
         
         this.startCountdown();
     }
@@ -225,6 +250,7 @@ export class SnakeGame {
             if (count < 0) {
                 clearInterval(countdownInterval);
                 this.gameState.setWaiting(false);
+                this.arrowManager.startSpawning();
                 this.gameLoop = window.setInterval(() => {
                     this.update();
                     this.draw();
@@ -237,7 +263,7 @@ export class SnakeGame {
         const oldTileCount = { ...this.tileCount };
         this.tileCount = {
             x: Math.floor(this.canvas.width / this.config.gridSize),
-            y: Math.floor((this.canvas.height - 150) / this.config.gridSize) // Adjust y count to exclude hand area
+            y: Math.floor((this.canvas.height - 150) / this.config.gridSize)
         };
         
         const scaleX = this.tileCount.x / oldTileCount.x;

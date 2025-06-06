@@ -1,4 +1,4 @@
-import { Hand, PokerHandType, PokerHandAnimation, Card } from './types.js';
+import { Hand, PokerHandType, PokerHandAnimation, Card, ExplosionAnimation } from './types.js';
 
 export class GameState {
     private score: number = 0;
@@ -8,8 +8,10 @@ export class GameState {
     private isPaused: boolean = false;
     private hand: Hand = { cards: [], maxSize: 5 };
     private pokerHandAnimations: PokerHandAnimation[] = [];
+    private explosionAnimations: ExplosionAnimation[] = [];
     private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number } | null = null;
     private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number } | null = null;
+    private multiplierExponent: number = 1;
 
     constructor() {
         this.highScore = Number(localStorage.getItem('snakeHighScore')) || 0;
@@ -31,12 +33,20 @@ export class GameState {
         return this.pokerHandAnimations;
     }
 
+    getExplosionAnimations(): ExplosionAnimation[] {
+        return this.explosionAnimations;
+    }
+
     getLastHandScore() {
         return this.lastHandScore;
     }
 
     getHighestHandScore() {
         return this.highestHandScore;
+    }
+
+    getMultiplierExponent(): number {
+        return this.multiplierExponent;
     }
 
     isGameOverState(): boolean {
@@ -111,5 +121,48 @@ export class GameState {
         this.lastHandScore = null;
         this.highestHandScore = null;
         this.pokerHandAnimations = [];
+        this.explosionAnimations = [];
+        this.multiplierExponent = 1;
+    }
+
+    increaseMultiplierExponent(maxValue: number): void {
+        this.multiplierExponent = Math.min(this.multiplierExponent + 1, maxValue);
+    }
+
+    resetMultiplierExponent(): void {
+        this.multiplierExponent = 1;
+    }
+
+    addExplosionAnimation(x: number, y: number): void {
+        const particles = [];
+        const colors = ['#FF0000', '#FFA500', '#FFFF00', '#FFD700'];
+        
+        // Create 20 particles in a circular pattern
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2;
+            const speed = 1 + Math.random(); // Reduced speed for smaller radius
+            particles.push({
+                x: 0,
+                y: 0,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            });
+        }
+
+        this.explosionAnimations.push({
+            x,
+            y,
+            startTime: Date.now(),
+            particles
+        });
+    }
+
+    updateExplosionAnimations(): void {
+        const now = Date.now();
+        this.explosionAnimations = this.explosionAnimations.filter(animation => {
+            const age = now - animation.startTime;
+            return age < 1000; // Explosion lasts 1 second
+        });
     }
 } 

@@ -50,6 +50,12 @@ export interface FoodItem extends Position {
     rank: CardRank;
 }
 
+export interface Arrow extends Position {
+    speed: number;
+    width: number;
+    height: number;
+}
+
 export interface GameConfig {
     gridSize: number;
     segmentScale: number;
@@ -64,6 +70,11 @@ export interface GameConfig {
     scoreLengthMultiplier: number;
     foodExpirationTime: number;
     initialSnakeLength: number;
+    arrowSpeed: number;
+    arrowSpawnInterval: number;
+    arrowWidth: number;
+    arrowHeight: number;
+    maxMultiplierExponent: number;
 }
 
 export type PokerHandType = 
@@ -90,4 +101,41 @@ export interface PokerHandAnimation {
     x: number;
     y: number;
     startTime: number;
+}
+
+export interface ExplosionAnimation {
+    x: number;
+    y: number;
+    startTime: number;
+    particles: {
+        x: number;
+        y: number;
+        vx: number;
+        vy: number;
+        color: string;
+    }[];
+}
+
+export interface GameState {
+    score: number;
+    hand: Hand;
+    isGameOver: boolean;
+    isWaiting: boolean;
+    isPaused: boolean;
+    lastHandScore?: {
+        type: PokerHandType;
+        baseScore: number;
+        lengthMultiplier: number;
+        finalScore: number;
+    };
+    highestHandScore?: {
+        type: PokerHandType;
+        baseScore: number;
+        lengthMultiplier: number;
+        finalScore: number;
+        setAt: number;
+    };
+    pokerHandAnimations: PokerHandAnimation[];
+    multiplierExponent: number;
+    explosionAnimations: ExplosionAnimation[];
 } 

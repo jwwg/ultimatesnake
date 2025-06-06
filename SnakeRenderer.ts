@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Arrow, ExplosionAnimation } from './types.js';
 
 export class SnakeRenderer {
     readonly cardColors = {
@@ -30,7 +30,15 @@ export class SnakeRenderer {
         };
     }
 
-    draw(snake: SnakeSegment[], foods: FoodItem[], isGameOver: boolean, hand: Hand, pokerHandAnimations: PokerHandAnimation[]): void {
+    draw(
+        snake: SnakeSegment[],
+        foods: FoodItem[],
+        isGameOver: boolean,
+        hand: Hand,
+        pokerHandAnimations: PokerHandAnimation[],
+        arrows: Arrow[],
+        explosionAnimations: ExplosionAnimation[]
+    ): void {
         if (isGameOver) return;
 
         // Clear canvas
@@ -48,8 +56,33 @@ export class SnakeRenderer {
         this.drawFood(foods);
         this.drawDestructionAnimations();
         this.drawPokerHandAnimations(pokerHandAnimations);
+        this.drawArrows(arrows);
+        this.drawExplosionAnimations(explosionAnimations);
         this.drawHand(hand);
         this.drawLengthMultiplier(snake.length);
+    }
+
+    private drawArrows(arrows: Arrow[]): void {
+        this.ctx.save();
+        arrows.forEach(arrow => {
+            // Draw arrow body (line)
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = '#FFFF00';
+            this.ctx.lineWidth = 3;
+            this.ctx.moveTo(arrow.x, arrow.y + arrow.height / 2);
+            this.ctx.lineTo(arrow.x + arrow.width - 15, arrow.y + arrow.height / 2);
+            this.ctx.stroke();
+
+            // Draw arrow head (triangle)
+            this.ctx.fillStyle = '#FFFF00';
+            this.ctx.beginPath();
+            this.ctx.moveTo(arrow.x + arrow.width, arrow.y + arrow.height / 2);
+            this.ctx.lineTo(arrow.x + arrow.width - 15, arrow.y + arrow.height / 2 - 7);
+            this.ctx.lineTo(arrow.x + arrow.width - 15, arrow.y + arrow.height / 2 + 7);
+            this.ctx.closePath();
+            this.ctx.fill();
+        });
+        this.ctx.restore();
     }
 
     private drawLengthMultiplier(snakeLength: number): void {
@@ -607,5 +640,27 @@ export class SnakeRenderer {
             this.ctx.textAlign = 'center';
             this.ctx.fillText(`Empty ${i + 1}`, x + cardWidth/2, y + cardHeight + 15);
         }
+    }
+
+    private drawExplosionAnimations(explosions: ExplosionAnimation[]): void {
+        const now = Date.now();
+        explosions.forEach(explosion => {
+            const age = now - explosion.startTime;
+            const progress = age / 1000; // 1 second duration
+            
+            explosion.particles.forEach(particle => {
+                const x = explosion.x + particle.x + (particle.vx * age * 0.1);
+                const y = explosion.y + particle.y + (particle.vy * age * 0.1);
+                const size = 3 * (1 - progress);
+                
+                this.ctx.save();
+                this.ctx.globalAlpha = 1 - progress;
+                this.ctx.fillStyle = particle.color;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
+            });
+        });
     }
 } 
