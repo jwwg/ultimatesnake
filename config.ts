@@ -5,7 +5,7 @@ export const defaultConfig: GameConfig = {
     segmentScale: 0.5,
     maxFoodItems: 5,
     minFoodInterval: 500,
-    maxFoodInterval: 1000,
+    maxFoodInterval: 2000,
     initialSpeed: 200,
     minSpeed: 50,
     speedDecrease: 2,

@@ -1,0 +1,95 @@
+import { Card, CardRank, Hand, PokerHandScore, PokerHandType } from './types.js';
+
+export class PokerHandEvaluator {
+    private readonly pokerHandScores: Record<PokerHandType, number> = {
+        royal_flush: 1000,
+        straight_flush: 800,
+        four_of_a_kind: 700,
+        full_house: 600,
+        flush: 500,
+        straight: 400,
+        three_of_a_kind: 300,
+        two_pair: 200,
+        pair: 100,
+        high_card: 50
+    };
+
+    evaluatePokerHand(hand: Hand): PokerHandScore {
+        const cards = [...hand.cards];
+        const ranks = cards.map(card => this.getCardValue(card.rank));
+        const suits = cards.map(card => card.suit);
+        
+        // Sort cards by rank
+        cards.sort((a, b) => this.getCardValue(b.rank) - this.getCardValue(a.rank));
+        ranks.sort((a, b) => b - a);
+
+        // Check for flush
+        const isFlush = suits.every(suit => suit === suits[0]);
+
+        // Check for straight
+        const isStraight = ranks.every((rank, i) => i === 0 || rank === ranks[i - 1] - 1);
+
+        // Check for royal flush
+        if (isFlush && isStraight && ranks[0] === 14) {
+            return { type: 'royal_flush', score: this.pokerHandScores.royal_flush, cards };
+        }
+
+        // Check for straight flush
+        if (isFlush && isStraight) {
+            return { type: 'straight_flush', score: this.pokerHandScores.straight_flush, cards };
+        }
+
+        // Count occurrences of each rank
+        const rankCounts = new Map<number, number>();
+        ranks.forEach(rank => rankCounts.set(rank, (rankCounts.get(rank) || 0) + 1));
+        const counts = Array.from(rankCounts.values()).sort((a, b) => b - a);
+
+        // Check for four of a kind
+        if (counts[0] === 4) {
+            return { type: 'four_of_a_kind', score: this.pokerHandScores.four_of_a_kind, cards };
+        }
+
+        // Check for full house
+        if (counts[0] === 3 && counts[1] === 2) {
+            return { type: 'full_house', score: this.pokerHandScores.full_house, cards };
+        }
+
+        // Check for flush
+        if (isFlush) {
+            return { type: 'flush', score: this.pokerHandScores.flush, cards };
+        }
+
+        // Check for straight
+        if (isStraight) {
+            return { type: 'straight', score: this.pokerHandScores.straight, cards };
+        }
+
+        // Check for three of a kind
+        if (counts[0] === 3) {
+            return { type: 'three_of_a_kind', score: this.pokerHandScores.three_of_a_kind, cards };
+        }
+
+        // Check for two pair
+        if (counts[0] === 2 && counts[1] === 2) {
+            return { type: 'two_pair', score: this.pokerHandScores.two_pair, cards };
+        }
+
+        // Check for pair
+        if (counts[0] === 2) {
+            return { type: 'pair', score: this.pokerHandScores.pair, cards };
+        }
+
+        // High card
+        return { type: 'high_card', score: this.pokerHandScores.high_card, cards };
+    }
+
+    private getCardValue(rank: CardRank): number {
+        switch (rank) {
+            case 'A': return 14;
+            case 'K': return 13;
+            case 'Q': return 12;
+            case 'J': return 11;
+            default: return parseInt(rank);
+        }
+    }
+} 
