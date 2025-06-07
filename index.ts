@@ -1,5 +1,6 @@
 import { SnakeGame } from './SnakeGame.js';
 import { initializeHelpDialog } from './src/helpDialog.js';
+import { achievementManager } from './achievements.js';
 
 // Initialize the game
 const game = new SnakeGame();
@@ -32,6 +33,8 @@ if (settingsDialog && settingsIcon && closeDialog && resetGame) {
                 highScoreElement.textContent = '0';
             }
         }
+        // Clear all achievements
+        achievementManager.clearAllAchievements();
         settingsDialog.classList.remove('show');
     });
 }

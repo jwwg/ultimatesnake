@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Arrow, ExplosionAnimation } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Arrow, ExplosionAnimation, Achievement } from './types.js';
 
 export class SnakeRenderer {
     readonly cardColors = {
@@ -605,7 +605,8 @@ export class SnakeRenderer {
         score: number, 
         highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] },
         message?: string,
-        isNewHighScore: boolean = false
+        isNewHighScore: boolean = false,
+        achievements?: Achievement[]
     ): void {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -627,15 +628,48 @@ export class SnakeRenderer {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 + (isNewHighScore ? 60 : -20));
 
+        let currentY = this.canvas.height / 2 + (isNewHighScore ? 100 : 20);
+
+        // Draw highest hand score if available
         if (highestHandScore) {
             this.drawHandScoreDetails(
                 highestHandScore,
                 this.canvas.width / 2,
-                this.canvas.height / 2 + (isNewHighScore ? 100 : 20),
+                currentY,
                 'center',
                 '#ffffff',
                 highestHandScore.cards
             );
+            // Move Y position down to make room for achievements
+            currentY += 200; // Adjust this value based on the height of hand score details
+        }
+
+        // Draw achievements if any were unlocked
+        if (achievements && achievements.length > 0) {
+            // Draw achievements header
+            this.ctx.font = 'bold 24px Arial';
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.fillText('Achievements Unlocked!', this.canvas.width / 2, currentY);
+
+            // Draw each achievement
+            achievements.forEach((achievement, index) => {
+                const y = currentY + 40 + (index * 60); // Increased spacing between achievements
+                
+                // Draw achievement icon (trophy)
+                this.ctx.font = '20px Arial';
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.fillText('🏆', this.canvas.width / 2 - 100, y);
+                
+                // Draw achievement title
+                this.ctx.font = 'bold 18px Arial';
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fillText(achievement.title, this.canvas.width / 2 - 70, y);
+                
+                // Draw achievement description
+                this.ctx.font = '16px Arial';
+                this.ctx.fillStyle = '#cccccc';
+                this.ctx.fillText(achievement.description, this.canvas.width / 2 - 70, y + 20);
+            });
         }
     }
 

@@ -139,4 +139,11 @@ export interface GameState {
     pokerHandAnimations: PokerHandAnimation[];
     multiplierExponent: number;
     explosionAnimations: ExplosionAnimation[];
+}
+
+export interface Achievement {
+    id: string;
+    title: string;
+    description: string;
+    unlockedAt?: number;
 } 

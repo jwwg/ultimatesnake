@@ -6,6 +6,8 @@ import { FoodManager } from './FoodManager.js';
 import { SnakeManager } from './SnakeManager.js';
 import { GameState } from './GameState.js';
 import { ArrowManager } from './ArrowManager.js';
+import { achievementManager } from './achievements.js';
+import { AchievementsUI } from './src/achievementsUI.js';
 
 export class SnakeGame {
     canvas: HTMLCanvasElement;
@@ -24,6 +26,7 @@ export class SnakeGame {
     private highScoreElement: HTMLElement;
     private multiplierElement: HTMLElement;
     private handsCompletedElement: HTMLElement;
+    private achievementsUI: AchievementsUI;
 
     private readonly LOW_CARDS_WARNING_THRESHOLD = 5;
 
@@ -55,6 +58,7 @@ export class SnakeGame {
         });
         this.gameState = new GameState();
         this.pokerHandEvaluator = new PokerHandEvaluator();
+        this.achievementsUI = new AchievementsUI(achievementManager);
 
         // Initialize score display elements
         this.scoreElement = document.getElementById('score')!;
@@ -128,6 +132,47 @@ export class SnakeGame {
         }
     }
 
+    private handleHandScored(pokerScore: PokerHandScore, finalMultiplier: number, food: FoodItem): void {
+        const finalScore = pokerScore.score * finalMultiplier;
+        this.gameState.addScore(finalScore);
+        this.updateScoreDisplay();
+        
+        // Check for achievements
+        achievementManager.checkAchievement(pokerScore.type);
+        this.achievementsUI.checkNewAchievements();
+        
+        // Store last hand score details with the cards used in the hand
+        this.gameState.setLastHandScore({
+            type: pokerScore.type,
+            baseScore: pokerScore.score,
+            lengthMultiplier: finalMultiplier,
+            finalScore,
+            cards: pokerScore.cards
+        });
+        
+        // Create animation at the last card's position
+        this.gameState.addPokerHandAnimation({
+            type: pokerScore.type,
+            score: finalScore,
+            x: food.x,
+            y: food.y,
+            startTime: Date.now()
+        });
+        
+        // Spawn arrows when a hand is completed
+        this.arrowManager.spawnArrow();
+        
+        // Clear the hand after scoring
+        this.gameState.clearHand();
+        this.updateHandsCompletedDisplay();
+        
+        // Increment hands played and check if game should end
+        this.gameState.incrementHandsPlayed();
+        if (this.gameState.hasReachedMaxHands()) {
+            this.gameOver('hands');
+        }
+    }
+
     private update(): void {
         if (this.gameState.isGameOverState() || this.gameState.isWaitingState() || this.gameState.isPausedState()) return;
 
@@ -185,41 +230,7 @@ export class SnakeGame {
             if (this.gameState.getHand().cards.length === this.gameState.getHand().maxSize) {
                 const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
                 const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
-                const finalScore = pokerScore.score * finalMultiplier;
-                this.gameState.addScore(finalScore);
-                this.updateScoreDisplay();
-                
-                // Store last hand score details with the cards used in the hand
-                this.gameState.setLastHandScore({
-                    type: pokerScore.type,
-                    baseScore: pokerScore.score,
-                    lengthMultiplier: finalMultiplier,
-                    finalScore,
-                    cards: pokerScore.cards
-                });
-                
-                // Create animation at the last card's position
-                this.gameState.addPokerHandAnimation({
-                    type: pokerScore.type,
-                    score: finalScore,
-                    x: food.x,
-                    y: food.y,
-                    startTime: Date.now()
-                });
-                
-                // Spawn arrows when a hand is completed
-                this.arrowManager.spawnArrow();
-                
-                // Clear the hand after scoring
-                this.gameState.clearHand();
-                this.updateHandsCompletedDisplay();
-                
-                // Increment hands played and check if game should end
-                this.gameState.incrementHandsPlayed();
-                if (this.gameState.hasReachedMaxHands()) {
-                    this.gameOver('hands');
-                    return;
-                }
+                this.handleHandScored(pokerScore, finalMultiplier, food);
             }
             
             // Grow snake
@@ -271,19 +282,28 @@ export class SnakeGame {
     }
 
     private gameOver(reason: 'collision' | 'deck' | 'hands' = 'collision'): void {
-        this.draw();
         this.gameState.setGameOver();
-        if (this.gameLoop) clearInterval(this.gameLoop);
-        this.updateHandsCompletedDisplay();
+        if (this.gameLoop) {
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
+        }
 
         const highestHandScore = this.gameState.getHighestHandScore();
+        const newlyUnlocked = achievementManager.getNewlyUnlocked();
         this.renderer.drawGameOver(
-            this.gameState.getScore(), 
-            highestHandScore || undefined,
+            this.gameState.getScore(),
+            highestHandScore ? {
+                type: highestHandScore.type,
+                baseScore: highestHandScore.baseScore,
+                lengthMultiplier: highestHandScore.lengthMultiplier,
+                finalScore: highestHandScore.finalScore,
+                cards: highestHandScore.cards
+            } : undefined,
             reason === 'deck' ? 'Game Over - Deck Empty!' : reason === 'hands' ? 'Game Over - Max Hands Reached!' : undefined,
             this.gameState.isNewHighScoreSet(),
-            highestHandScore?.cards || []
+            newlyUnlocked
         );
+        achievementManager.clearNewlyUnlocked();
     }
 
     private startGame(): void {
