@@ -17,6 +17,7 @@ export class GameState {
     private scoreLengthMultiplier: number = 1;
     private handsPlayed: number = 0;
     private readonly MAX_HANDS: number = 5;
+    private lastDeductionUpdate: number = Date.now();
 
     constructor() {
         this.highScore = Number(localStorage.getItem('snakeHighScore')) || 0;
@@ -59,7 +60,7 @@ export class GameState {
     }
 
     getMultiplier(snakeLength: number) {
-        return snakeLength * this.scoreLengthMultiplier * this.multiplierExponent - this.multiplierDeduction;
+        return Math.max(1, snakeLength * this.scoreLengthMultiplier * this.multiplierExponent - this.multiplierDeduction);
     }
 
     isGameOverState(): boolean {
@@ -147,6 +148,13 @@ export class GameState {
         return this.handsPlayed >= this.MAX_HANDS;
     }
 
+    increaseMultiplierDeduction(deductionRate: number): void {
+        const now = Date.now();
+        const timeElapsed = (now - this.lastDeductionUpdate) / 1000; // Convert to seconds
+        this.multiplierDeduction += deductionRate * timeElapsed;
+        this.lastDeductionUpdate = now;
+    }
+
     reset(scoreLengthMultiplier: number): void {
         this.score = 0;
         this.highScore = this.getHighScore();
@@ -163,6 +171,7 @@ export class GameState {
         this.multiplierDeduction = 0;
         this.scoreLengthMultiplier = scoreLengthMultiplier;
         this.handsPlayed = 0;
+        this.lastDeductionUpdate = Date.now();
     }
 
     increaseMultiplierExponent(maxValue: number): void {

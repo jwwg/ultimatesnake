@@ -1,5 +1,7 @@
 import { PokerHandType } from './types.js';
 
+export const BIRD_CATCH_ACHIEVEMENT_ID = 'bird_catch';
+
 export interface Achievement {
     id: string;
     title: string;
@@ -57,6 +59,11 @@ export const ACHIEVEMENTS: Record<string, Achievement> = {
         id: 'pair',
         title: 'Pair',
         description: 'Score your first Pair'
+    },
+    [BIRD_CATCH_ACHIEVEMENT_ID]: {
+        id: BIRD_CATCH_ACHIEVEMENT_ID,
+        title: 'Bird Catcher',
+        description: 'Catch your first bird'
     }
 };
 
@@ -81,8 +88,8 @@ export class AchievementManager {
         localStorage.setItem(AchievementManager.STORAGE_KEY, JSON.stringify(this.achievements));
     }
 
-    checkAchievement(handType: PokerHandType): void {
-        const achievement = this.achievements[handType];
+    checkAchievement(input: PokerHandType | string): void {
+        const achievement = this.achievements[input];
         if (achievement && !achievement.unlockedAt) {
             achievement.unlockedAt = Date.now();
             this.newlyUnlocked.push(achievement);

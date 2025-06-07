@@ -73,5 +73,6 @@ export const defaultConfig: GameConfig = {
     arrowSpeed: 5, // Speed of the arrow moving across the screen
     arrowWidth: 40, // Width of the arrow
     arrowHeight: 20, // Height of the arrow
-    maxMultiplierExponent: 10 // Maximum value for the multiplier exponent
+    maxMultiplierExponent: 10, // Maximum value for the multiplier exponent
+    multiplierDeductionRate: 0.1 // Rate at which the multiplier deduction increases per second
 }; 

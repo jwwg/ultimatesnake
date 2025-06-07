@@ -76,6 +76,7 @@ export interface GameConfig {
     arrowWidth: number;
     arrowHeight: number;
     maxMultiplierExponent: number;
+    multiplierDeductionRate: number;
 }
 
 export type PokerHandType = 

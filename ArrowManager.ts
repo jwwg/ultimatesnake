@@ -1,4 +1,6 @@
 import { Arrow, Position, GameConfig } from './types.js';
+import { AchievementManager, BIRD_CATCH_ACHIEVEMENT_ID } from './achievements.js';
+import { AchievementsUI } from './src/achievementsUI.js';
 
 interface ArrowManagerConfig {
     arrowSpeed: number;
@@ -11,10 +13,19 @@ export class ArrowManager {
     private arrows: Arrow[] = [];
     private readonly config: ArrowManagerConfig;
     private readonly tileCount: { x: number; y: number };
+    private readonly achievementManager: AchievementManager;
+    private readonly achievementsUI: AchievementsUI;
 
-    constructor(tileCount: { x: number; y: number }, config: ArrowManagerConfig) {
+    constructor(
+        tileCount: { x: number; y: number }, 
+        config: ArrowManagerConfig, 
+        achievementManager: AchievementManager,
+        achievementsUI: AchievementsUI
+    ) {
         this.tileCount = tileCount;
         this.config = config;
+        this.achievementManager = achievementManager;
+        this.achievementsUI = achievementsUI;
     }
 
     spawnArrow(): void {
@@ -51,6 +62,8 @@ export class ArrowManager {
 
         if (hitArrow) {
             this.arrows = this.arrows.filter(arrow => arrow !== hitArrow);
+            this.achievementManager.checkAchievement(BIRD_CATCH_ACHIEVEMENT_ID);
+            this.achievementsUI.checkNewAchievements();
             return hitArrow;
         }
 

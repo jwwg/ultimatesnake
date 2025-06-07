@@ -62,7 +62,7 @@ export class SnakeRenderer {
         // Draw grid border
         const gridWidth = this.tileCount.x * this.config.gridSize;
         const gridHeight = this.tileCount.y * this.config.gridSize;
-        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.strokeStyle = 'rgb(29, 29, 29)'; //dark grey
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(0, 0, gridWidth, gridHeight);
 
@@ -557,7 +557,7 @@ export class SnakeRenderer {
         const prefix = align === 'left' ? '' : align === 'right' ? 'Highest ' : 'Best ';
         this.ctx.fillText(`${prefix}Hand :`, x, y);
         this.ctx.fillText(`Hand Type: ${this.pokerHandNames[score.type]}`, x, y + 20);
-        this.ctx.fillText(`Score: ${score.baseScore} x ${score.lengthMultiplier} = ${score.finalScore}`, x, y + 40);
+        this.ctx.fillText(`Score: ${Math.floor(score.baseScore)} x ${Math.floor(score.lengthMultiplier)} = ${Math.floor(score.finalScore)}`, x, y + 40);
 
         // Draw the cards used in the hand
         const cardWidth = 40 * scale;
@@ -626,7 +626,7 @@ export class SnakeRenderer {
         
         this.ctx.font = '24px Arial';
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 + (isNewHighScore ? 60 : -20));
+        this.ctx.fillText(`Final Score: ${Math.floor(score)}`, this.canvas.width / 2, this.canvas.height / 2 + (isNewHighScore ? 60 : -20));
 
         let currentY = this.canvas.height / 2 + (isNewHighScore ? 100 : 20);
 
@@ -644,33 +644,6 @@ export class SnakeRenderer {
             currentY += 200; // Adjust this value based on the height of hand score details
         }
 
-        // Draw achievements if any were unlocked
-        if (achievements && achievements.length > 0) {
-            // Draw achievements header
-            this.ctx.font = 'bold 24px Arial';
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.fillText('Achievements Unlocked!', this.canvas.width / 2, currentY);
-
-            // Draw each achievement
-            achievements.forEach((achievement, index) => {
-                const y = currentY + 40 + (index * 60); // Increased spacing between achievements
-                
-                // Draw achievement icon (trophy)
-                this.ctx.font = '20px Arial';
-                this.ctx.fillStyle = '#FFD700';
-                this.ctx.fillText('🏆', this.canvas.width / 2 - 100, y);
-                
-                // Draw achievement title
-                this.ctx.font = 'bold 18px Arial';
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillText(achievement.title, this.canvas.width / 2 - 70, y);
-                
-                // Draw achievement description
-                this.ctx.font = '16px Arial';
-                this.ctx.fillStyle = '#cccccc';
-                this.ctx.fillText(achievement.description, this.canvas.width / 2 - 70, y + 20);
-            });
-        }
     }
 
     drawCountdown(count: number): void {
@@ -732,7 +705,7 @@ export class SnakeRenderer {
             // Draw score with larger font
             this.ctx.font = 'bold 20px Arial';
             this.ctx.fillText(
-                `+${anim.score}`,
+                `+${Math.floor(anim.score)}`,
                 (anim.x + 0.5) * this.config.gridSize,
                 y * this.config.gridSize + this.config.gridSize * 0.4
             );

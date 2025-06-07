@@ -50,15 +50,16 @@ export class SnakeGame {
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
         });
+        this.achievementsUI = new AchievementsUI(achievementManager);
         this.arrowManager = new ArrowManager(this.tileCount, {
             arrowSpeed: this.config.arrowSpeed,
             arrowWidth: this.config.arrowWidth,
             arrowHeight: this.config.arrowHeight,
             gridSize: this.config.gridSize
-        });
+        }, achievementManager, this.achievementsUI);
         this.gameState = new GameState();
         this.pokerHandEvaluator = new PokerHandEvaluator();
-        this.achievementsUI = new AchievementsUI(achievementManager);
+        
 
         // Initialize score display elements
         this.scoreElement = document.getElementById('score')!;
@@ -115,9 +116,9 @@ export class SnakeGame {
     }
 
     private updateScoreDisplay(): void {
-        this.scoreElement.textContent = this.gameState.getScore().toString();
-        this.highScoreElement.textContent = this.gameState.getHighScore().toString();
-        this.multiplierElement.textContent = `${this.gameState.getMultiplier(this.snakeManager.getSnake().length)}x`;
+        this.scoreElement.textContent = this.gameState.getScore().toFixed(0).toString();
+        this.highScoreElement.textContent = this.gameState.getHighScore().toFixed(0).toString();
+        this.multiplierElement.textContent = `${this.gameState.getMultiplier(this.snakeManager.getSnake().length).toFixed(2)}x`;
     }
 
     private updateHandsCompletedDisplay(): void {
@@ -187,6 +188,9 @@ export class SnakeGame {
 
         // Update arrows
         this.arrowManager.update();
+
+        // Update multiplier deduction
+        this.gameState.increaseMultiplierDeduction(this.config.multiplierDeductionRate);
 
         // Check for arrow collision with snake head
         const snakeHead = this.snakeManager.getSnake()[0];
