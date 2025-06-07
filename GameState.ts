@@ -10,8 +10,8 @@ export class GameState {
     private hand: Hand = { cards: [], maxSize: 5 };
     private pokerHandAnimations: PokerHandAnimation[] = [];
     private explosionAnimations: ExplosionAnimation[] = [];
-    private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number } | null = null;
-    private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number } | null = null;
+    private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] } | null = null;
+    private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number; cards: Card[] } | null = null;
     private multiplierExponent: number = 1;
     private multiplierDeduction: number = 0;
     private scoreLengthMultiplier: number = 1;
@@ -99,11 +99,12 @@ export class GameState {
         );
     }
 
-    setLastHandScore(score: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number }): void {
+    setLastHandScore(score: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] }): void {
         this.lastHandScore = score;
         if (!this.highestHandScore || score.finalScore > this.highestHandScore.finalScore) {
             this.highestHandScore = { 
                 ...score,
+                cards: score.cards,
                 setAt: Date.now()
             };
         }

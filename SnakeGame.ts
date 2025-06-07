@@ -189,12 +189,13 @@ export class SnakeGame {
                 this.gameState.addScore(finalScore);
                 this.updateScoreDisplay();
                 
-                // Store last hand score details
+                // Store last hand score details with the cards used in the hand
                 this.gameState.setLastHandScore({
                     type: pokerScore.type,
                     baseScore: pokerScore.score,
                     lengthMultiplier: finalMultiplier,
-                    finalScore
+                    finalScore,
+                    cards: pokerScore.cards
                 });
                 
                 // Create animation at the last card's position
@@ -211,6 +212,7 @@ export class SnakeGame {
                 
                 // Clear the hand after scoring
                 this.gameState.clearHand();
+                this.updateHandsCompletedDisplay();
                 
                 // Increment hands played and check if game should end
                 this.gameState.incrementHandsPlayed();
@@ -246,8 +248,8 @@ export class SnakeGame {
         const highestHandScore = this.gameState.getHighestHandScore();
         
         const handWithScore: Hand & { 
-            lastHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number };
-            highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number };
+            lastHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] };
+            highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number; cards: Card[] };
         } = {
             ...hand,
             lastHandScore: lastHandScore || undefined,
@@ -274,11 +276,13 @@ export class SnakeGame {
         if (this.gameLoop) clearInterval(this.gameLoop);
         this.updateHandsCompletedDisplay();
 
+        const highestHandScore = this.gameState.getHighestHandScore();
         this.renderer.drawGameOver(
             this.gameState.getScore(), 
-            this.gameState.getHighestHandScore() || undefined,
+            highestHandScore || undefined,
             reason === 'deck' ? 'Game Over - Deck Empty!' : reason === 'hands' ? 'Game Over - Max Hands Reached!' : undefined,
-            this.gameState.isNewHighScoreSet()
+            this.gameState.isNewHighScoreSet(),
+            highestHandScore?.cards || []
         );
     }
 

@@ -30,7 +30,6 @@ h1 {
 
 #gameCanvas {
     background: #000000;
-    border-radius: 8px;
     margin-bottom: 1rem;
 }
 
@@ -38,11 +37,21 @@ h1 {
     margin: 0.5rem 0 1.5rem 0;
     font-size: 1.2rem;
     color: #ffffff;
-    text-align: left;
     background: rgba(0, 0, 0, 0.3);
     padding: 0.8rem 1.2rem;
     border-radius: 8px;
     border: 1px solid rgba(76, 175, 80, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.score-left {
+    text-align: left;
+}
+
+.score-right {
+    text-align: right;
 }
 
 .score-container span {
@@ -54,7 +63,7 @@ h1 {
 }
 
 #multiplier {
-    color: #ff9800;
+    color: #FFD700;
 }
 
 #startButton {

@@ -15,6 +15,19 @@ export class SnakeRenderer {
         head: '#45a049'
     } as const;
 
+    readonly pokerHandNames = {
+        royal_flush: 'Royal Flush',
+        straight_flush: 'Straight Flush',
+        four_of_a_kind: 'Four of a Kind',
+        full_house: 'Full House',
+        flush: 'Flush',
+        straight: 'Straight',
+        three_of_a_kind: 'Three of a Kind',
+        two_pair: 'Two Pair',
+        pair: 'Pair',
+        high_card: 'High Card'
+    } as const;
+
     private destructionAnimations: { segment: SnakeSegment; startTime: number }[] = [];
     private readonly destructionDuration = 2000; // Animation duration in milliseconds (2 seconds)
     readonly tileCount: { x: number; y: number };
@@ -444,14 +457,15 @@ export class SnakeRenderer {
         const padding = 10;
         const startX = (this.canvas.width - (cardWidth * hand.maxSize + padding * (hand.maxSize - 1))) / 2;
         const startY = this.tileCount.y * this.config.gridSize + 20; // Position hand below the grid
-
+        const inGameScale = 0.8;
+        
         // Draw poker table green background
         this.ctx.fillStyle = '#35654d'; // Classic poker table green
         this.ctx.fillRect(0, startY - 10, this.canvas.width, cardHeight + 40);
 
         // Draw last hand score if available
         if (hand.lastHandScore) {
-            this.drawHandScoreDetails(hand.lastHandScore, 10, startY - 5, 'left', '#ffffff');
+            this.drawHandScoreDetails(hand.lastHandScore, 10, startY - 5, 'left', '#ffffff', hand.lastHandScore.cards, inGameScale);
         }
 
         // Draw highest hand score if available
@@ -467,9 +481,8 @@ export class SnakeRenderer {
             
             // Create a gradient between white and yellow based on flash intensity
             const flashColor = `rgb(255, ${255 - Math.floor(flashIntensity * 100)}, ${255 - Math.floor(flashIntensity * 100)})`;
-            this.drawHandScoreDetails(hand.highestHandScore, this.canvas.width - 10, startY - 5, 'right', flashColor);
+            this.drawHandScoreDetails(hand.highestHandScore, this.canvas.width - 10, startY - 5, 'right', flashColor, hand.highestHandScore.cards, inGameScale);
         }
-
 
         // Draw each card in the hand
         hand.cards.forEach((card, index) => {
@@ -504,7 +517,6 @@ export class SnakeRenderer {
             this.ctx.textAlign = 'right';
             this.ctx.textBaseline = 'bottom';
             this.ctx.fillText(card.rank, x + cardWidth - 5, y + cardHeight - 5);
-
         });
 
         // Draw empty card slots
@@ -525,7 +537,6 @@ export class SnakeRenderer {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText('+', x + cardWidth/2, y + cardHeight/2);
-
         }
     }
 
@@ -534,7 +545,9 @@ export class SnakeRenderer {
         x: number,
         y: number,
         align: 'left' | 'right' | 'center',
-        color: string
+        color: string,
+        cards: Card[],
+        scale: number = 1
     ): void {
         this.ctx.fillStyle = color;
         this.ctx.font = '14px Arial';
@@ -542,16 +555,55 @@ export class SnakeRenderer {
         this.ctx.textBaseline = 'top';
         
         const prefix = align === 'left' ? '' : align === 'right' ? 'Highest ' : 'Best ';
-        this.ctx.fillText(`${prefix}Hand Score:`, x, y);
-        this.ctx.fillText(`Hand Type: ${score.type.replace('_', ' ').toUpperCase()}`, x, y + 20);
-        this.ctx.fillText(`Base Score: ${score.baseScore}`, x, y + 40);
-        this.ctx.fillText(`Multiplier: ${score.lengthMultiplier}`, x, y + 60);
-        this.ctx.fillText(`Final Score: ${score.finalScore}`, x, y + 80);
+        this.ctx.fillText(`${prefix}Hand :`, x, y);
+        this.ctx.fillText(`Hand Type: ${this.pokerHandNames[score.type]}`, x, y + 20);
+        this.ctx.fillText(`Score: ${score.baseScore} x ${score.lengthMultiplier} = ${score.finalScore}`, x, y + 40);
+
+        // Draw the cards used in the hand
+        const cardWidth = 40 * scale;
+        const cardHeight = 60 * scale;
+        const cardPadding = 5 * scale;
+        const startX = align === 'left' ? x : align === 'right' ? x - (cardWidth + cardPadding) * cards.length : x - ((cardWidth + cardPadding) * cards.length) / 2;
+        const startY = y + 60;
+
+        cards.forEach((card, index) => {
+            const cardX = startX + (cardWidth + cardPadding) * index;
+            const cardY = startY;
+
+            // Draw card background
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(cardX, cardY, cardWidth, cardHeight);
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 1 * scale;
+            this.ctx.strokeRect(cardX, cardY, cardWidth, cardHeight);
+
+            // Draw card content
+            this.ctx.fillStyle = this.cardColors[card.suit];
+            
+            // Draw rank in top-left
+            this.ctx.font = `${12 * scale}px Arial`;
+            this.ctx.textAlign = 'left';
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText(card.rank, cardX + 2 * scale, cardY + 2 * scale);
+
+            // Draw suit symbol in center
+            const suitSymbol = this.getSuitSymbol(card.suit);
+            this.ctx.font = `${24 * scale}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(suitSymbol, cardX + cardWidth/2, cardY + cardHeight/2);
+
+            // Draw rank in bottom-right (upside down)
+            this.ctx.font = `${12 * scale}px Arial`;
+            this.ctx.textAlign = 'right';
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.fillText(card.rank, cardX + cardWidth - 2 * scale, cardY + cardHeight - 2 * scale);
+        });
     }
 
     drawGameOver(
         score: number, 
-        highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number },
+        highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] },
         message?: string,
         isNewHighScore: boolean = false
     ): void {
@@ -581,7 +633,8 @@ export class SnakeRenderer {
                 this.canvas.width / 2,
                 this.canvas.height / 2 + (isNewHighScore ? 100 : 20),
                 'center',
-                '#ffffff'
+                '#ffffff',
+                highestHandScore.cards
             );
         }
     }

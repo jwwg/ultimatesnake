@@ -34,6 +34,7 @@ export interface Hand {
         baseScore: number;
         lengthMultiplier: number;
         finalScore: number;
+        cards: Card[];
     };
     highestHandScore?: {
         type: PokerHandType;
@@ -41,6 +42,7 @@ export interface Hand {
         lengthMultiplier: number;
         finalScore: number;
         setAt: number;
+        cards: Card[];
     };
 }
 
