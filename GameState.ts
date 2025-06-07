@@ -15,6 +15,8 @@ export class GameState {
     private multiplierExponent: number = 1;
     private multiplierDeduction: number = 0;
     private scoreLengthMultiplier: number = 1;
+    private handsPlayed: number = 0;
+    private readonly MAX_HANDS: number = 5;
 
     constructor() {
         this.highScore = Number(localStorage.getItem('snakeHighScore')) || 0;
@@ -128,6 +130,22 @@ export class GameState {
         this.isPaused = !this.isPaused;
     }
 
+    getHandsPlayed(): number {
+        return this.handsPlayed;
+    }
+
+    getMaxHands(): number {
+        return this.MAX_HANDS;
+    }
+
+    incrementHandsPlayed(): void {
+        this.handsPlayed++;
+    }
+
+    hasReachedMaxHands(): boolean {
+        return this.handsPlayed >= this.MAX_HANDS;
+    }
+
     reset(scoreLengthMultiplier: number): void {
         this.score = 0;
         this.highScore = this.getHighScore();
@@ -143,6 +161,7 @@ export class GameState {
         this.multiplierExponent = 1;
         this.multiplierDeduction = 0;
         this.scoreLengthMultiplier = scoreLengthMultiplier;
+        this.handsPlayed = 0;
     }
 
     increaseMultiplierExponent(maxValue: number): void {

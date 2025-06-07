@@ -23,7 +23,8 @@ export class SnakeGame {
     private scoreElement: HTMLElement;
     private highScoreElement: HTMLElement;
     private multiplierElement: HTMLElement;
-    private cardsRemainingElement: HTMLElement;
+    private handsCompletedElement: HTMLElement;
+
     private readonly LOW_CARDS_WARNING_THRESHOLD = 5;
 
     constructor(config: GameConfig = defaultConfig) {
@@ -59,11 +60,11 @@ export class SnakeGame {
         this.scoreElement = document.getElementById('score')!;
         this.highScoreElement = document.getElementById('highScore')!;
         this.multiplierElement = document.getElementById('multiplier')!;
-        this.cardsRemainingElement = document.getElementById('cardsRemaining')!;
+        this.handsCompletedElement = document.getElementById('handsCompleted')!;
 
         this.setupEventListeners();
         this.updateScoreDisplay();
-        this.updateCardsRemainingDisplay();
+        this.updateHandsCompletedDisplay();
         this.draw();
     }
 
@@ -115,15 +116,15 @@ export class SnakeGame {
         this.multiplierElement.textContent = `${this.gameState.getMultiplier(this.snakeManager.getSnake().length)}x`;
     }
 
-    private updateCardsRemainingDisplay(): void {
-        const remainingCards = this.foodManager.getRemainingCards();
-        this.cardsRemainingElement.textContent = `Cards: ${remainingCards}`;
+    private updateHandsCompletedDisplay(): void {
+        const handsCompleted = this.gameState.getHandsPlayed();
+        this.handsCompletedElement.textContent = `${handsCompleted}/${this.gameState.getMaxHands()}`;
         
         // Add warning class if cards are low
-        if (remainingCards <= this.LOW_CARDS_WARNING_THRESHOLD) {
-            this.cardsRemainingElement.classList.add('warning');
+        if (handsCompleted == this.gameState.getMaxHands() - 1) {
+            this.handsCompletedElement.classList.add('warning');
         } else {
-            this.cardsRemainingElement.classList.remove('warning');
+            this.handsCompletedElement.classList.remove('warning');
         }
     }
 
@@ -131,7 +132,7 @@ export class SnakeGame {
         if (this.gameState.isGameOverState() || this.gameState.isWaitingState() || this.gameState.isPausedState()) return;
 
         // Update cards remaining display
-        this.updateCardsRemainingDisplay();
+        this.updateHandsCompletedDisplay();
 
         // Check if deck is empty
         if (this.foodManager.getIsDeckEmpty()) {
@@ -210,6 +211,13 @@ export class SnakeGame {
                 
                 // Clear the hand after scoring
                 this.gameState.clearHand();
+                
+                // Increment hands played and check if game should end
+                this.gameState.incrementHandsPlayed();
+                if (this.gameState.hasReachedMaxHands()) {
+                    this.gameOver('hands');
+                    return;
+                }
             }
             
             // Grow snake
@@ -260,15 +268,16 @@ export class SnakeGame {
         if (this.gameState.isPausedState()) this.renderer.drawPaused();
     }
 
-    private gameOver(reason: 'collision' | 'deck' = 'collision'): void {
+    private gameOver(reason: 'collision' | 'deck' | 'hands' = 'collision'): void {
+        this.draw();
         this.gameState.setGameOver();
         if (this.gameLoop) clearInterval(this.gameLoop);
-        
-        this.draw();
+        this.updateHandsCompletedDisplay();
+
         this.renderer.drawGameOver(
             this.gameState.getScore(), 
             this.gameState.getHighestHandScore() || undefined,
-            reason === 'deck' ? 'Game Over - Deck Empty!' : undefined,
+            reason === 'deck' ? 'Game Over - Deck Empty!' : reason === 'hands' ? 'Game Over - Max Hands Reached!' : undefined,
             this.gameState.isNewHighScoreSet()
         );
     }
@@ -286,7 +295,7 @@ export class SnakeGame {
         });
         this.arrowManager.reset();
         this.updateScoreDisplay();
-        this.updateCardsRemainingDisplay();
+        this.updateHandsCompletedDisplay();
         this.startCountdown();
     }
 

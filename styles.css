@@ -97,7 +97,7 @@ h1 {
     transform: scale(0.98);
 }
 
-#cardsRemaining.warning {
+#handsCompleted.warning {
     color: #ff4444;
     font-weight: bold;
     animation: pulse 1s infinite;

@@ -70,10 +70,10 @@ The game ends when:
 
 
 ## TODO
-- end game after 5 hands
-- fix high score
+- ~~end game after 5 hands~~
+- ~~fix high score~~
 - animate on hand complete
-- remove extra card texts
+- ~~remove extra card texts~~
 - clean up score header
 - show cards used for hand in card detail summary
 - rebalance scoring

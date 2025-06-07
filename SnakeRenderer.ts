@@ -457,12 +457,6 @@ export class SnakeRenderer {
             this.drawHandScoreDetails(hand.highestHandScore, this.canvas.width - 10, startY - 5, 'right', flashColor);
         }
 
-        // Draw hand info
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '16px Arial';
-        this.ctx.textAlign = 'left';
-        this.ctx.textBaseline = 'top';
-        this.ctx.fillText(`Hand: ${hand.cards.length}/${hand.maxSize} cards`, 10, startY + cardHeight + 15);
 
         // Draw each card in the hand
         hand.cards.forEach((card, index) => {
@@ -498,11 +492,6 @@ export class SnakeRenderer {
             this.ctx.textBaseline = 'bottom';
             this.ctx.fillText(card.rank, x + cardWidth - 5, y + cardHeight - 5);
 
-            // Draw card index
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '12px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(`Card ${index + 1}`, x + cardWidth/2, y + cardHeight + 15);
         });
 
         // Draw empty card slots
@@ -524,11 +513,6 @@ export class SnakeRenderer {
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText('+', x + cardWidth/2, y + cardHeight/2);
 
-            // Draw slot number
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '12px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(`Empty ${i + 1}`, x + cardWidth/2, y + cardHeight + 15);
         }
     }
 
