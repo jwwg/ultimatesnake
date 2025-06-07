@@ -57,34 +57,47 @@ export class SnakeRenderer {
         this.drawFood(foods);
         this.drawDestructionAnimations();
         this.drawPokerHandAnimations(pokerHandAnimations);
-        this.drawArrows(arrows);
+        this.drawBirds(arrows);
         this.drawExplosionAnimations(explosionAnimations);
         this.drawHand(hand);
     }
 
-    private drawArrows(arrows: Arrow[]): void {
+    private drawBirds(arrows: Arrow[]): void {
+        const currentTime = Date.now();
         this.ctx.save();
         arrows.forEach(arrow => {
-            // Draw arrow body (line)
+            // Calculate wing flap animation
+            const flapSpeed = 0.01; // Speed of wing flapping
+            const flapAmount = Math.sin(currentTime * flapSpeed) * 15 - 5; // Wing flap amplitude
+            
+            // Wings
+            this.ctx.strokeStyle = '#FFD700'; // Yellow color for wings
+            this.ctx.lineWidth = 2;
+
+            // Left wing
             this.ctx.beginPath();
-            this.ctx.strokeStyle = '#FFFF00';
-            this.ctx.lineWidth = 3;
-            this.ctx.moveTo(arrow.x, arrow.y + arrow.height / 2);
-            this.ctx.lineTo(arrow.x + arrow.width - 15, arrow.y + arrow.height / 2);
+            this.ctx.moveTo(arrow.x + arrow.width/2, arrow.y + 5 + arrow.height/2);
+            this.ctx.quadraticCurveTo(
+                arrow.x + arrow.width/4,
+                arrow.y + arrow.height/2 + flapAmount,
+                arrow.x + arrow.width/6,
+                arrow.y + arrow.height/2 - 2
+            );
             this.ctx.stroke();
 
-            // Draw arrow head (triangle)
-            this.ctx.fillStyle = '#FFFF00';
+            // Right wing
             this.ctx.beginPath();
-            this.ctx.moveTo(arrow.x + arrow.width, arrow.y + arrow.height / 2);
-            this.ctx.lineTo(arrow.x + arrow.width - 15, arrow.y + arrow.height / 2 - 7);
-            this.ctx.lineTo(arrow.x + arrow.width - 15, arrow.y + arrow.height / 2 + 7);
-            this.ctx.closePath();
-            this.ctx.fill();
+            this.ctx.moveTo(arrow.x + arrow.width/2, arrow.y + 5 + arrow.height/2);
+            this.ctx.quadraticCurveTo(
+                arrow.x + arrow.width*3/4,
+                arrow.y + arrow.height/2 + flapAmount,
+                arrow.x + arrow.width*5/6,
+                arrow.y + arrow.height/2 - 2
+            );
+            this.ctx.stroke();
         });
         this.ctx.restore();
     }
-
 
     addDestructionAnimation(segment: SnakeSegment): void {
         this.destructionAnimations.push({
