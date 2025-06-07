@@ -17,7 +17,7 @@ export class SnakeGame {
     renderer: SnakeRenderer;
     private snakeManager: SnakeManager;
     private foodManager: FoodManager;
-    private gameState: GameState;
+    gameState: GameState;
     private pokerHandEvaluator: PokerHandEvaluator;
     private arrowManager: ArrowManager;
     private scoreElement: HTMLElement;
@@ -268,7 +268,8 @@ export class SnakeGame {
         this.renderer.drawGameOver(
             this.gameState.getScore(), 
             this.gameState.getHighestHandScore() || undefined,
-            reason === 'deck' ? 'Game Over - Deck Empty!' : undefined
+            reason === 'deck' ? 'Game Over - Deck Empty!' : undefined,
+            this.gameState.isNewHighScoreSet()
         );
     }
 

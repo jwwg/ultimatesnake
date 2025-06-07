@@ -66,3 +66,19 @@ The game ends when:
 - Use the ram ability strategically to cut off unwanted segments
 - Plan your path to maximize poker hand possibilities
 - Watch for the pulsing effect on cards that are about to expire 
+
+
+
+## TODO
+- end game after 5 hands
+- fix high score
+- animate on hand complete
+- remove extra card texts
+- clean up score header
+- show cards used for hand in card detail summary
+- rebalance scoring
+- achievemebts
+  - for each hand
+  - for completing 5 hands
+- help screen
+

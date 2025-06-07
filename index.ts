@@ -21,10 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetHighScore?.addEventListener('click', () => {
         // Reset in game state
         if (game && 'gameState' in game) {
-            const gameState = (game as any).gameState;
-            if (gameState && typeof gameState.reset === 'function') {
-                gameState.reset(1); // Reset with default score length multiplier
-            }
+            game.gameState.setHighScore(0);
         }
         
         // Update UI

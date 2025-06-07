@@ -6,6 +6,7 @@ export class GameState {
     private isGameOver: boolean = false;
     private isWaiting: boolean = true;
     private isPaused: boolean = false;
+    private isNewHighScore: boolean = false;
     private hand: Hand = { cards: [], maxSize: 5 };
     private pokerHandAnimations: PokerHandAnimation[] = [];
     private explosionAnimations: ExplosionAnimation[] = [];
@@ -25,6 +26,10 @@ export class GameState {
 
     getHighScore(): number {
         return Number(localStorage.getItem('snakeHighScore')) || 0;
+    }
+
+    setHighScore(highScore: number): void {
+        localStorage.setItem('snakeHighScore', highScore.toString());
     }
 
     getHand(): Hand {
@@ -106,8 +111,13 @@ export class GameState {
         this.isGameOver = true;
         if (this.score > this.highScore) {
             this.highScore = this.score;
-            localStorage.setItem('snakeHighScore', this.highScore.toString());
+            this.isNewHighScore = true;
+            this.setHighScore(this.highScore);
         }
+    }
+
+    isNewHighScoreSet(): boolean {
+        return this.isNewHighScore;
     }
 
     setWaiting(waiting: boolean): void {
@@ -120,10 +130,11 @@ export class GameState {
 
     reset(scoreLengthMultiplier: number): void {
         this.score = 0;
-        this.highScore = 0;
+        this.highScore = this.getHighScore();
         this.isGameOver = false;
         this.isWaiting = true;
         this.isPaused = false;
+        this.isNewHighScore = false;
         this.hand = { cards: [], maxSize: 5 };
         this.lastHandScore = null;
         this.highestHandScore = null;
@@ -132,7 +143,6 @@ export class GameState {
         this.multiplierExponent = 1;
         this.multiplierDeduction = 0;
         this.scoreLengthMultiplier = scoreLengthMultiplier;
-        localStorage.removeItem('snakeHighScore');
     }
 
     increaseMultiplierExponent(maxValue: number): void {

@@ -555,22 +555,34 @@ export class SnakeRenderer {
     drawGameOver(
         score: number, 
         highestHandScore?: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number },
-        message?: string
+        message?: string,
+        isNewHighScore: boolean = false
     ): void {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw game over message
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '30px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(message || 'Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 60);
+        
+        // Draw score with special effect if it's a new high score
+        if (isNewHighScore) {
+            this.ctx.font = 'bold 36px Arial';
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.fillText('NEW HIGH SCORE!', this.canvas.width / 2, this.canvas.height / 2 - 20);
+        }
+        
         this.ctx.font = '24px Arial';
-        this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 - 20);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillText(`Final Score: ${score}`, this.canvas.width / 2, this.canvas.height / 2 + (isNewHighScore ? 60 : -20));
 
         if (highestHandScore) {
             this.drawHandScoreDetails(
                 highestHandScore,
                 this.canvas.width / 2,
-                this.canvas.height / 2 + 20,
+                this.canvas.height / 2 + (isNewHighScore ? 100 : 20),
                 'center',
                 '#ffffff'
             );
