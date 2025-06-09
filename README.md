@@ -1,6 +1,6 @@
 # Poker Serpent
 
-A modern twist on the classic Snake game, combining elements of poker and strategic gameplay.
+Snake has evolved and is now playing poker.
 
 ## Setup
 
@@ -10,11 +10,11 @@ A modern twist on the classic Snake game, combining elements of poker and strate
 ```bash
 npm install
 ```
-4. Start the development server:
+4. Start the Vite development server:
 ```bash
-npm start
+npm run dev
 ```
-5. Open your browser and navigate to `http://localhost:3000`
+5. Open your browser and navigate to `http://localhost:5173`
 
 ## Game Rules
 
@@ -22,63 +22,53 @@ npm start
 - Use arrow keys to control the snake's direction
 - Collect cards to grow your snake and build poker hands
 - Avoid colliding with your own body
+- Game ends after completing 5 poker hands
 
 ### Card Collection
-- Each food item is a playing card
 - Collecting a card:
   - Grows your snake by one segment
   - Adds the card to your hand
   - Increases your score based on the card's rank (A=14, K=13, Q=12, J=11, 10-2=face value)
   - Cards disappear after 10 seconds if not collected
-
-### Special Cards
-- **Ace (A)**: Transforms your snake's head into a ram. When in ram mode, you can break through your own body, cutting off segments after the collision point and earning bonus points.
-- **Diamonds (♦)**: Makes your snake's head speedy, increasing movement speed temporarily.
+  - Watch for the pulsing effect on cards that are about to expire
 
 ### Poker Hands
 - Your hand can hold up to 5 cards
 - When your hand is full, it's automatically evaluated for poker hands
-- Scoring for poker hands:
-  - Royal Flush: 1000 points
-  - Straight Flush: 800 points
-  - Four of a Kind: 700 points
-  - Full House: 600 points
-  - Flush: 500 points
-  - Straight: 400 points
-  - Three of a Kind: 300 points
-  - Two Pair: 200 points
-  - Pair: 100 points
-  - High Card: 50 points
+- Hand Requirements:
+  - Royal Flush: A, K, Q, J, 10 of the same suit
+  - Straight Flush: Five consecutive cards of the same suit
+  - Four of a Kind: Four cards of the same rank
+  - Full House: Three of a kind plus a pair
+  - Flush: Five cards of the same suit
+  - Straight: Five consecutive cards of any suit
+  - Three of a Kind: Three cards of the same rank
+  - Two Pair: Two different pairs
+  - Pair: Two cards of the same rank
+  - High Card: Highest card when no other hand is made
 
-### Scoring
+### Scoring System
 - Base score from card ranks
 - Bonus points for poker hands
-- Extra points for ram collisions (scales with segments cut off)
 - Length bonus (0.5 points per segment)
+- High scores are tracked and displayed
 
-### Game Over
+### Game Over Conditions
 The game ends when:
 - Your snake collides with itself (unless in ram mode)
 - The snake's head goes off the screen
+- You complete 5 poker hands
 
-## Tips
-- Try to collect cards quickly before they expire
+### Tips for Success
+- Collect cards quickly before they expire
 - Use the ram ability strategically to cut off unwanted segments
 - Plan your path to maximize poker hand possibilities
-- Watch for the pulsing effect on cards that are about to expire 
-
-
+- Watch for the pulsing effect on cards that are about to expire
+- Balance between collecting cards and building poker hands
+- Use special cards (Ace and Diamonds) strategically
 
 ## TODO
-- ~~end game after 5 hands~~
-- ~~fix high score~~
 - animate on hand complete
-- ~~remove extra card texts~~
-- clean up score header
-- show cards used for hand in card detail summary
-- rebalance scoring
-- achievemebts
-  - for each hand
-  - for completing 5 hands
-- help screen
+
+
 
