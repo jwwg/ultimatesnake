@@ -118,6 +118,10 @@ export class SnakeGame {
     private updateScoreDisplay(): void {
         this.scoreElement.textContent = this.gameState.getScore().toFixed(0).toString();
         this.highScoreElement.textContent = this.gameState.getHighScore().toFixed(0).toString();
+        this.updateMultiplierDisplay();
+    }
+
+    private updateMultiplierDisplay(): void {
         this.multiplierElement.textContent = `${this.gameState.getMultiplier(this.snakeManager.getSnake().length).toFixed(2)}x`;
     }
 
@@ -191,6 +195,7 @@ export class SnakeGame {
 
         // Update multiplier deduction
         this.gameState.increaseMultiplierDeduction(this.config.multiplierDeductionRate);
+        this.updateMultiplierDisplay();
 
         // Check for arrow collision with snake head
         const snakeHead = this.snakeManager.getSnake()[0];

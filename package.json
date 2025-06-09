@@ -4,12 +4,15 @@
     "description": "A TypeScript implementation of Snake",
     "main": "dist/game.js",
     "scripts": {
-        "build": "tsc",
-        "watch": "tsc -w",
-        "start": "tsc && serve"
+        "build": "vite build",
+        "dev": "vite",
+        "preview": "vite preview",
+        "serve": "serve dist"
     },
     "devDependencies": {
         "typescript": "^5.0.0",
+        "vite": "^5.0.0",
+        "@types/node": "^20.0.0",
         "serve": "^14.0.0"
     }
 } 

@@ -1,13 +1,15 @@
 import { SnakeGame } from './SnakeGame.js';
 import { initializeHelpDialog } from './src/helpDialog.js';
 import { achievementManager } from './achievements.js';
+import { initializeAchievementsDialog } from './src/achievementsDialog.js';
 
 // Initialize the game
 const game = new SnakeGame();
 
-// Initialize help dialog
+// Initialize dialogs
 document.addEventListener('DOMContentLoaded', () => {
     initializeHelpDialog();
+    initializeAchievementsDialog();
 });
 
 // All dialog functionality
