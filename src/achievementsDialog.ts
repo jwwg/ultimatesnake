@@ -1,4 +1,4 @@
-import { achievementManager, ACHIEVEMENTS } from '../achievements.js';
+import { achievementManager, ACHIEVEMENTS, COMPLETION_ACHIEVEMENT_ID } from '../achievements.js';
 
 export function initializeAchievementsDialog(): void {
     const achievementsDialog = document.getElementById('achievementsDialog');
@@ -17,10 +17,11 @@ export function initializeAchievementsDialog(): void {
         const allAchievements = achievementManager.getAllAchievements();
         achievementsContent.innerHTML = allAchievements.map(achievement => {
             const isUnlocked = !!achievement.unlockedAt;
+            const isSpecial = achievement.isSpecial;
             return `
-                <div class="achievement-item ${isUnlocked ? 'unlocked' : 'locked'}">
+                <div class="achievement-item ${isUnlocked ? 'unlocked' : 'locked'} ${isSpecial ? 'special' : ''}">
                     <div class="achievement-header">
-                        <i class="fas fa-trophy"></i>
+                        <i class="fas ${isSpecial ? 'fa-crown' : 'fa-trophy'}"></i>
                         <h3>${achievement.title}</h3>
                     </div>
                     <p>${achievement.description}</p>

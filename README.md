@@ -1,4 +1,4 @@
-# Ultimate Snake
+# Poker Serpent
 
 A modern twist on the classic Snake game, combining elements of poker and strategic gameplay.
 

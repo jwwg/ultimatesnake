@@ -1,12 +1,14 @@
 import { PokerHandType } from './types.js';
 
 export const BIRD_CATCH_ACHIEVEMENT_ID = 'bird_catch';
+export const COMPLETION_ACHIEVEMENT_ID = 'completion';
 
 export interface Achievement {
     id: string;
     title: string;
     description: string;
     unlockedAt?: number;
+    isSpecial?: boolean;
 }
 
 export const ACHIEVEMENTS: Record<string, Achievement> = {
@@ -64,6 +66,12 @@ export const ACHIEVEMENTS: Record<string, Achievement> = {
         id: BIRD_CATCH_ACHIEVEMENT_ID,
         title: 'Bird Catcher',
         description: 'Catch your first bird'
+    },
+    [COMPLETION_ACHIEVEMENT_ID]: {
+        id: COMPLETION_ACHIEVEMENT_ID,
+        title: 'Poker Serpent Master',
+        description: 'Unlock all achievements',
+        isSpecial: true
     }
 };
 
@@ -94,6 +102,25 @@ export class AchievementManager {
             achievement.unlockedAt = Date.now();
             this.newlyUnlocked.push(achievement);
             this.saveAchievements();
+            
+            // Check if all regular achievements are now unlocked
+            this.checkCompletionAchievement();
+        }
+    }
+
+    private checkCompletionAchievement(): void {
+        const regularAchievements = Object.values(this.achievements)
+            .filter(a => a.id !== COMPLETION_ACHIEVEMENT_ID);
+            
+        const allUnlocked = regularAchievements.every(a => a.unlockedAt != null);
+        
+        if (allUnlocked) {
+            const completionAchievement = this.achievements[COMPLETION_ACHIEVEMENT_ID];
+            if (!completionAchievement.unlockedAt) {
+                completionAchievement.unlockedAt = Date.now();
+                this.newlyUnlocked.push(completionAchievement);
+                this.saveAchievements();
+            }
         }
     }
 
