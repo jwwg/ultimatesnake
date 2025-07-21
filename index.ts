@@ -86,4 +86,34 @@ helpDialog?.addEventListener('click', (e) => {
     if (e.target === helpDialog) {
         helpDialog.classList.remove('show');
     }
+});
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
+});
+
+document.addEventListener('touchend', function (e) {
+    if (e.changedTouches.length === 1) {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 30) {
+                game.turn('right');
+            } else if (dx < -30) {
+                game.turn('left');
+            }
+        } else {
+            if (dy > 30) {
+                game.turn('down');
+            } else if (dy < -30) {
+                game.turn('up');
+            }
+        }
+    }
 }); 

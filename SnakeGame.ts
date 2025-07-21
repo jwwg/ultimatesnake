@@ -389,4 +389,30 @@ export class SnakeGame {
         
         this.draw();
     }
+
+    turn(direction: 'up' | 'down' | 'left' | 'right'): void {
+        if (this.gameState.isPausedState() || this.gameState.isGameOverState() || this.gameState.isWaitingState()) return;
+
+        const currentDirection = this.snakeManager.getDirection();
+        const newDirection = { x: 0, y: 0 };
+
+        switch (direction) {
+            case 'up':
+                if (currentDirection.y !== 1) newDirection.y = -1;
+                break;
+            case 'down':
+                if (currentDirection.y !== -1) newDirection.y = 1;
+                break;
+            case 'left':
+                if (currentDirection.x !== 1) newDirection.x = -1;
+                break;
+            case 'right':
+                if (currentDirection.x !== -1) newDirection.x = 1;
+                break;
+        }
+
+        if (newDirection.x !== 0 || newDirection.y !== 0) {
+            this.snakeManager.setDirection(newDirection);
+        }
+    }
 } 
