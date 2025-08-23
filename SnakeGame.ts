@@ -27,6 +27,7 @@ export class SnakeGame {
     private highScoreElement: HTMLElement;
     private multiplierElement: HTMLElement;
     private handsCompletedElement: HTMLElement;
+    private cardsElement: HTMLElement;
     private achievementsUI: AchievementsUI;
     private jokerDialog: JokerDialog;
 
@@ -69,10 +70,12 @@ export class SnakeGame {
         this.highScoreElement = document.getElementById('highScore')!;
         this.multiplierElement = document.getElementById('multiplier')!;
         this.handsCompletedElement = document.getElementById('handsCompleted')!;
+        this.cardsElement = document.getElementById('cards')!;
 
         this.setupEventListeners();
         this.updateScoreDisplay();
         this.updateHandsCompletedDisplay();
+        this.updateCardsDisplay();
         this.draw();
     }
 
@@ -83,7 +86,7 @@ export class SnakeGame {
     }
 
     private handlePlayPauseClick(): void {
-        if (this.gameState.isWaitingState()) {
+        if (this.gameState.isWaitingState() || this.gameState.isGameOverState()) {
             this.startGame();
         } else if (!this.gameState.isGameOverState()) {
             this.togglePause();
@@ -104,12 +107,17 @@ export class SnakeGame {
     }
 
     private handleKeyPress(event: KeyboardEvent): void {
-        if (this.gameState.isWaitingState()) {
+        if (this.gameState.isWaitingState() || this.gameState.isGameOverState()) {
             this.startGame();
             return;
         }
 
-        if (event.key === 'p' || event.key === 'P') {
+        // Don't handle pause/space key if joker dialog is open
+        if ((event.key === 'p' || event.key === 'P' || event.key === ' ') && this.jokerDialog.isDialogOpen()) {
+            return;
+        }
+
+        if (event.key === 'p' || event.key === 'P' || event.key === ' ') {
             this.togglePause();
             return;
         }
@@ -165,6 +173,18 @@ export class SnakeGame {
             this.handsCompletedElement.classList.add('warning');
         } else {
             this.handsCompletedElement.classList.remove('warning');
+        }
+    }
+
+    private updateCardsDisplay(): void {
+        const remainingCards = this.foodManager.getRemainingCards();
+        this.cardsElement.textContent = remainingCards.toString();
+        
+        // Add warning class if cards are low
+        if (remainingCards <= this.LOW_CARDS_WARNING_THRESHOLD) {
+            this.cardsElement.classList.add('warning');
+        } else {
+            this.cardsElement.classList.remove('warning');
         }
     }
 
@@ -310,15 +330,8 @@ export class SnakeGame {
         // Remove food
         this.foodManager.removeFoodAt(food);
         
-        // Increase speed
-        //this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
-        if (this.gameLoop) {
-            clearInterval(this.gameLoop);
-            this.gameLoop = window.setInterval(() => {
-                this.update();
-                this.draw();
-            }, this.speed);
-        }
+        // Remove the unnecessary game loop restart
+        // The game loop should continue running at the same speed
     }
 
     private update(): void {
@@ -326,6 +339,7 @@ export class SnakeGame {
 
         // Update cards remaining display
         this.updateHandsCompletedDisplay();
+        this.updateCardsDisplay();
 
         // Check if deck is empty
         if (this.foodManager.getIsDeckEmpty()) {
@@ -445,6 +459,7 @@ export class SnakeGame {
         this.birdManager.reset();
         this.updateScoreDisplay();
         this.updateHandsCompletedDisplay();
+        this.updateCardsDisplay();
         this.updatePlayPauseIcon();
         this.startCountdown();
     }

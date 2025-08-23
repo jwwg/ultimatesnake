@@ -188,6 +188,7 @@ export class JokerDialog {
                 this.moveSelection(1);
             } else if (event.key === ' ') {
                 event.preventDefault();
+                event.stopPropagation();
                 const selectedOption = options[this.selectedIndex];
                 if (selectedOption) {
                     this.selectOption(selectedOption);
@@ -226,10 +227,20 @@ export class JokerDialog {
                 button.style.backgroundColor = '#ff6b35';
                 button.style.transform = 'scale(1.02)';
                 button.style.borderColor = '#ff6b35';
+                // Update text colors for selected state
+                const titleElement = button.querySelector('div:first-child') as HTMLElement;
+                const descriptionElement = button.querySelector('div:last-child') as HTMLElement;
+                if (titleElement) titleElement.style.color = 'white';
+                if (descriptionElement) descriptionElement.style.color = '#ecf0f1';
             } else {
                 button.style.backgroundColor = '#34495e';
                 button.style.transform = 'scale(1)';
                 button.style.borderColor = '#ff6b35';
+                // Update text colors for unselected state
+                const titleElement = button.querySelector('div:first-child') as HTMLElement;
+                const descriptionElement = button.querySelector('div:last-child') as HTMLElement;
+                if (titleElement) titleElement.style.color = '#ff6b35';
+                if (descriptionElement) descriptionElement.style.color = '#bdc3c7';
             }
         });
     }
@@ -247,6 +258,10 @@ export class JokerDialog {
             this.resolvePromise = null;
         }
         this.removeDialog();
+    }
+
+    isDialogOpen(): boolean {
+        return this.dialog !== null;
     }
 
     private removeDialog(): void {

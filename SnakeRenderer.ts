@@ -186,6 +186,9 @@ export class SnakeRenderer {
             this.ctx.fillStyle = this.segmentColors[segment.type];
             this.ctx.fillRect(x, y, size, size);
 
+            // Draw animated forked tongue
+            this.drawSnakeTongue(segment, x, y, size);
+
             // Draw connecting line to next segment if it exists
             if (segment.nextSegment) {
                 const nextX = segment.nextSegment.x * this.config.gridSize;
@@ -216,6 +219,92 @@ export class SnakeRenderer {
                 this.ctx.stroke();
             }
         }
+    }
+
+    drawSnakeTongue(segment: SnakeSegment, x: number, y: number, size: number): void {
+        if (!segment.lastDirection) return;
+
+        const currentTime = Date.now();
+        const centerX = x + size/2;
+        const centerY = y + size/2;
+        
+        // Animate tongue flicking
+        const flickSpeed = 0.008; // Speed of tongue flicking
+        const flickAmount = Math.sin(currentTime * flickSpeed) * 0.3 + 0.7; // Tongue length varies between 0.4 and 1.0
+        
+        const tongueLength = size * 0.6 * flickAmount;
+        const tongueWidth = size * 0.15;
+        const forkLength = size * 0.2;
+        const forkWidth = size * 0.05;
+        
+        // Set tongue color (dark red)
+        this.ctx.strokeStyle = '#8B0000';
+        this.ctx.fillStyle = '#DC143C';
+        this.ctx.lineWidth = 2;
+        
+        // Calculate tongue position based on direction
+        let tongueStartX = centerX;
+        let tongueStartY = centerY;
+        let tongueEndX = centerX;
+        let tongueEndY = centerY;
+        let fork1X = centerX;
+        let fork1Y = centerY;
+        let fork2X = centerX;
+        let fork2Y = centerY;
+        
+        if (segment.lastDirection.x === 1) {
+            // Right direction
+            tongueStartX = centerX + size/2;
+            tongueEndX = tongueStartX + tongueLength;
+            fork1X = tongueEndX;
+            fork1Y = tongueEndY - forkWidth;
+            fork2X = tongueEndX;
+            fork2Y = tongueEndY + forkWidth;
+        } else if (segment.lastDirection.x === -1) {
+            // Left direction
+            tongueStartX = centerX - size/2;
+            tongueEndX = tongueStartX - tongueLength;
+            fork1X = tongueEndX;
+            fork1Y = tongueEndY - forkWidth;
+            fork2X = tongueEndX;
+            fork2Y = tongueEndY + forkWidth;
+        } else if (segment.lastDirection.y === 1) {
+            // Down direction
+            tongueStartY = centerY + size/2;
+            tongueEndY = tongueStartY + tongueLength;
+            fork1X = tongueEndX - forkWidth;
+            fork1Y = tongueEndY;
+            fork2X = tongueEndX + forkWidth;
+            fork2Y = tongueEndY;
+        } else if (segment.lastDirection.y === -1) {
+            // Up direction
+            tongueStartY = centerY - size/2;
+            tongueEndY = tongueStartY - tongueLength;
+            fork1X = tongueEndX - forkWidth;
+            fork1Y = tongueEndY;
+            fork2X = tongueEndX + forkWidth;
+            fork2Y = tongueEndY;
+        }
+        
+        // Draw main tongue
+        this.ctx.beginPath();
+        this.ctx.moveTo(tongueStartX, tongueStartY);
+        this.ctx.lineTo(tongueEndX, tongueEndY);
+        this.ctx.stroke();
+        
+        // Draw forked ends
+        this.ctx.beginPath();
+        this.ctx.moveTo(tongueEndX, tongueEndY);
+        this.ctx.lineTo(fork1X, fork1Y);
+        this.ctx.moveTo(tongueEndX, tongueEndY);
+        this.ctx.lineTo(fork2X, fork2Y);
+        this.ctx.stroke();
+        
+        // Add a subtle glow effect
+        this.ctx.shadowColor = '#DC143C';
+        this.ctx.shadowBlur = 3;
+        this.ctx.stroke();
+        this.ctx.shadowBlur = 0;
     }
 
     drawRamHead(segment: SnakeSegment, x: number, y: number, size: number): void {
