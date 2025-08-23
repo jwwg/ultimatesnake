@@ -52,7 +52,7 @@ export interface FoodItem extends Position {
     rank: CardRank;
 }
 
-export interface Arrow extends Position {
+export interface Bird extends Position {
     speed: number;
     width: number;
     height: number;
@@ -72,9 +72,9 @@ export interface GameConfig {
     scoreLengthMultiplier: number;
     foodExpirationTime: number;
     initialSnakeLength: number;
-    arrowSpeed: number;
-    arrowWidth: number;
-    arrowHeight: number;
+    birdSpeed: number;
+    birdWidth: number;
+    birdHeight: number;
     maxMultiplierExponent: number;
     multiplierDeductionRate: number;
 }

@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Arrow, ExplosionAnimation, Achievement } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Bird, ExplosionAnimation, Achievement } from './types.js';
 
 export class SnakeRenderer {
     readonly cardColors = {
@@ -49,7 +49,7 @@ export class SnakeRenderer {
         isGameOver: boolean,
         hand: Hand,
         pokerHandAnimations: PokerHandAnimation[],
-        arrows: Arrow[],
+        birds: Bird[],
         explosionAnimations: ExplosionAnimation[],
         multiplierExponent: number
     ): void {
@@ -70,15 +70,15 @@ export class SnakeRenderer {
         this.drawFood(foods);
         this.drawDestructionAnimations();
         this.drawPokerHandAnimations(pokerHandAnimations);
-        this.drawBirds(arrows);
+        this.drawBirds(birds);
         this.drawExplosionAnimations(explosionAnimations);
         this.drawHand(hand);
     }
 
-    private drawBirds(arrows: Arrow[]): void {
+    private drawBirds(birds: Bird[]): void {
         const currentTime = Date.now();
         this.ctx.save();
-        arrows.forEach(arrow => {
+        birds.forEach(bird => {
             // Calculate wing flap animation
             const flapSpeed = 0.01; // Speed of wing flapping
             const flapAmount = Math.sin(currentTime * flapSpeed) * 15 - 5; // Wing flap amplitude
@@ -89,23 +89,23 @@ export class SnakeRenderer {
 
             // Left wing
             this.ctx.beginPath();
-            this.ctx.moveTo(arrow.x + arrow.width/2, arrow.y + 5 + arrow.height/2);
+            this.ctx.moveTo(bird.x + bird.width/2, bird.y + 5 + bird.height/2);
             this.ctx.quadraticCurveTo(
-                arrow.x + arrow.width/4,
-                arrow.y + arrow.height/2 + flapAmount,
-                arrow.x + arrow.width/6,
-                arrow.y + arrow.height/2 - 2
+                bird.x + bird.width/4,
+                bird.y + bird.height/2 + flapAmount,
+                bird.x + bird.width/6,
+                bird.y + bird.height/2 - 2
             );
             this.ctx.stroke();
 
             // Right wing
             this.ctx.beginPath();
-            this.ctx.moveTo(arrow.x + arrow.width/2, arrow.y + 5 + arrow.height/2);
+            this.ctx.moveTo(bird.x + bird.width/2, bird.y + 5 + bird.height/2);
             this.ctx.quadraticCurveTo(
-                arrow.x + arrow.width*3/4,
-                arrow.y + arrow.height/2 + flapAmount,
-                arrow.x + arrow.width*5/6,
-                arrow.y + arrow.height/2 - 2
+                bird.x + bird.width*3/4,
+                bird.y + bird.height/2 + flapAmount,
+                bird.x + bird.width*5/6,
+                bird.y + bird.height/2 - 2
             );
             this.ctx.stroke();
         });

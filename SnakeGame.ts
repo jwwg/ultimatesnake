@@ -5,7 +5,7 @@ import { PokerHandEvaluator } from './PokerHandEvaluator.js';
 import { FoodManager } from './FoodManager.js';
 import { SnakeManager } from './SnakeManager.js';
 import { GameState } from './GameState.js';
-import { ArrowManager } from './ArrowManager.js';
+import { BirdManager } from './BirdManager.js';
 import { achievementManager } from './achievements.js';
 import { AchievementsUI } from './src/achievementsUI.js';
 
@@ -21,7 +21,7 @@ export class SnakeGame {
     private foodManager: FoodManager;
     gameState: GameState;
     private pokerHandEvaluator: PokerHandEvaluator;
-    private arrowManager: ArrowManager;
+    private birdManager: BirdManager;
     private scoreElement: HTMLElement;
     private highScoreElement: HTMLElement;
     private multiplierElement: HTMLElement;
@@ -51,10 +51,10 @@ export class SnakeGame {
             foodExpirationTime: this.config.foodExpirationTime
         });
         this.achievementsUI = new AchievementsUI(achievementManager);
-        this.arrowManager = new ArrowManager(this.tileCount, {
-            arrowSpeed: this.config.arrowSpeed,
-            arrowWidth: this.config.arrowWidth,
-            arrowHeight: this.config.arrowHeight,
+        this.birdManager = new BirdManager(this.tileCount, {
+            birdSpeed: this.config.birdSpeed,
+            birdWidth: this.config.birdWidth,
+            birdHeight: this.config.birdHeight,
             gridSize: this.config.gridSize
         }, achievementManager, this.achievementsUI);
         this.gameState = new GameState();
@@ -97,15 +97,23 @@ export class SnakeGame {
 
         switch(event.key) {
             case 'ArrowUp':
+            case 'w':
+            case 'W':
                 if (this.snakeManager.getDirection().y !== 1) newDirection.y = -1;
                 break;
             case 'ArrowDown':
+            case 's':
+            case 'S':
                 if (this.snakeManager.getDirection().y !== -1) newDirection.y = 1;
                 break;
             case 'ArrowLeft':
+            case 'a':
+            case 'A':
                 if (this.snakeManager.getDirection().x !== 1) newDirection.x = -1;
                 break;
             case 'ArrowRight':
+            case 'd':
+            case 'D':
                 if (this.snakeManager.getDirection().x !== -1) newDirection.x = 1;
                 break;
         }
@@ -164,8 +172,8 @@ export class SnakeGame {
             startTime: Date.now()
         });
         
-        // Spawn arrows when a hand is completed
-        this.arrowManager.spawnArrow();
+        // Spawn birds when a hand is completed
+        this.birdManager.spawnBird();
         
         // Clear the hand after scoring
         this.gameState.clearHand();
@@ -190,18 +198,18 @@ export class SnakeGame {
             return;
         }
 
-        // Update arrows
-        this.arrowManager.update();
+        // Update birds
+        this.birdManager.update();
 
         // Update multiplier deduction
         this.gameState.increaseMultiplierDeduction(this.config.multiplierDeductionRate);
         this.updateMultiplierDisplay();
 
-        // Check for arrow collision with snake head
+        // Check for bird collision with snake head
         const snakeHead = this.snakeManager.getSnake()[0];
-        const hitArrow = this.arrowManager.checkCollision(snakeHead);
-        if (hitArrow) {
-            this.gameState.addExplosionAnimation(hitArrow.x + hitArrow.width / 2, hitArrow.y + hitArrow.height / 2);
+        const hitBird = this.birdManager.checkCollision(snakeHead);
+        if (hitBird) {
+            this.gameState.addExplosionAnimation(hitBird.x + hitBird.width / 2, hitBird.y + hitBird.height / 2);
             this.gameState.increaseMultiplierExponent(this.config.maxMultiplierExponent);
             this.updateScoreDisplay();
         }
@@ -249,7 +257,7 @@ export class SnakeGame {
             this.foodManager.removeFoodAt(food);
             
             // Increase speed
-            this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
+            //this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
             if (this.gameLoop) {
                 clearInterval(this.gameLoop);
                 this.gameLoop = window.setInterval(() => {
@@ -282,7 +290,7 @@ export class SnakeGame {
             this.gameState.isGameOverState(),
             handWithScore,
             this.gameState.getPokerHandAnimations(),
-            this.arrowManager.getArrows(),
+            this.birdManager.getBirds(),
             this.gameState.getExplosionAnimations(),
             this.gameState.getMultiplierExponent()
         );
@@ -326,7 +334,7 @@ export class SnakeGame {
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
         });
-        this.arrowManager.reset();
+        this.birdManager.reset();
         this.updateScoreDisplay();
         this.updateHandsCompletedDisplay();
         this.startCountdown();

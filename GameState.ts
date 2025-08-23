@@ -60,7 +60,7 @@ export class GameState {
     }
 
     getMultiplier(snakeLength: number) {
-        return Math.max(1, snakeLength * this.scoreLengthMultiplier * this.multiplierExponent - this.multiplierDeduction);
+        return Math.max(1, this.multiplierExponent - this.multiplierDeduction);
     }
 
     isGameOverState(): boolean {
