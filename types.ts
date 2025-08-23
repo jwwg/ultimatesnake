@@ -118,6 +118,16 @@ export interface ExplosionAnimation {
     }[];
 }
 
+export interface CardDrawAnimation {
+    card: Card;
+    startTime: number;
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    duration: number;
+}
+
 export interface GameState {
     score: number;
     hand: Hand;
@@ -140,6 +150,7 @@ export interface GameState {
     pokerHandAnimations: PokerHandAnimation[];
     multiplierExponent: number;
     explosionAnimations: ExplosionAnimation[];
+    cardDrawAnimations: CardDrawAnimation[];
 }
 
 export interface Achievement {

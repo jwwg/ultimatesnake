@@ -30,6 +30,7 @@ export class SnakeGame {
     private cardsElement: HTMLElement;
     private achievementsUI: AchievementsUI;
     private jokerDialog: JokerDialog;
+    private lastCollidedFood?: FoodItem;
 
     private readonly LOW_CARDS_WARNING_THRESHOLD = 5;
 
@@ -63,6 +64,14 @@ export class SnakeGame {
         }, achievementManager, this.achievementsUI);
         this.gameState = new GameState();
         this.pokerHandEvaluator = new PokerHandEvaluator();
+        
+        // Set up callback for when hand becomes full
+        this.gameState.setOnHandFullCallback(() => {
+            const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
+            const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
+            this.handleHandScored(pokerScore, finalMultiplier, this.lastCollidedFood);
+            this.lastCollidedFood = undefined; // Clear after use
+        });
         
 
         // Initialize score display elements
@@ -188,7 +197,7 @@ export class SnakeGame {
         }
     }
 
-    private handleHandScored(pokerScore: PokerHandScore, finalMultiplier: number, food: FoodItem): void {
+    private handleHandScored(pokerScore: PokerHandScore, finalMultiplier: number, food?: FoodItem): void {
         const finalScore = pokerScore.score * finalMultiplier;
         this.gameState.addScore(finalScore);
         this.updateScoreDisplay();
@@ -206,12 +215,12 @@ export class SnakeGame {
             cards: pokerScore.cards
         });
         
-        // Create animation at the last card's position
+        // Create animation at the last card's position (or center if no food provided)
         this.gameState.addPokerHandAnimation({
             type: pokerScore.type,
             score: finalScore,
-            x: food.x,
-            y: food.y,
+            x: food ? food.x : this.tileCount.x / 2,
+            y: food ? food.y : this.tileCount.y / 2,
             startTime: Date.now()
         });
         
@@ -276,7 +285,9 @@ export class SnakeGame {
                 if (lastCard && lastCard.suit !== 'joker') {
                     const newCard = this.foodManager.addCardOfSuit(lastCard.suit);
                     if (newCard) {
-                        this.gameState.addCardToHand(newCard);
+                        const handPos = this.calculateHandPosition(this.gameState.getHand().cards.length);
+                        // Start from top-left of game area (not the very corner)
+                        this.gameState.addCardToHand(newCard, 50, 50, handPos.x, handPos.y);
                     }
                 }
                 break;
@@ -286,7 +297,9 @@ export class SnakeGame {
                     const nextRank = this.getNextRank(lastCard.rank);
                     const newCard = this.foodManager.addCardOfRank(nextRank);
                     if (newCard) {
-                        this.gameState.addCardToHand(newCard);
+                        const handPos = this.calculateHandPosition(this.gameState.getHand().cards.length);
+                        // Start from top-left of game area (not the very corner)
+                        this.gameState.addCardToHand(newCard, 50, 50, handPos.x, handPos.y);
                     }
                 }
                 break;
@@ -304,6 +317,19 @@ export class SnakeGame {
         return ranks[nextIndex];
     }
 
+    private calculateHandPosition(cardIndex: number): { x: number; y: number } {
+        const cardWidth = 60;
+        const cardHeight = 90;
+        const padding = 10;
+        const startX = (this.canvas.width - (cardWidth * 5 + padding * 4)) / 2;
+        const startY = this.tileCount.y * this.config.gridSize + 20;
+        
+        return {
+            x: startX + (cardWidth + padding) * cardIndex,
+            y: startY
+        };
+    }
+
     private handleRegularCardCollision(food: FoodItem): void {
         // Calculate score based on snake length and card rank
         const rankValue = this.config.scorePerFood;
@@ -312,17 +338,16 @@ export class SnakeGame {
         this.updateScoreDisplay();
 
         // Add card to hand if there's space
+        const handPos = this.calculateHandPosition(this.gameState.getHand().cards.length);
         this.gameState.addCardToHand({
             suit: food.suit,
             rank: food.rank
-        });
+        }, food.x * this.config.gridSize, food.y * this.config.gridSize, handPos.x, handPos.y);
 
-        // Check if hand is full and evaluate poker hand
-        if (this.gameState.getHand().cards.length === this.gameState.getHand().maxSize) {
-            const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
-            const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
-            this.handleHandScored(pokerScore, finalMultiplier, food);
-        }
+        // Check if hand is full and evaluate poker hand (will be checked in updateCardDrawAnimations)
+        // The hand evaluation will happen when the animation completes
+        // Store the food item for the callback
+        this.lastCollidedFood = food;
         
         // Grow snake
         this.snakeManager.grow();
@@ -369,6 +394,7 @@ export class SnakeGame {
         // Update animations
         this.gameState.updatePokerHandAnimations();
         this.gameState.updateExplosionAnimations();
+        this.gameState.updateCardDrawAnimations();
 
         // Move snake and check for collision
         const { newHead, collision } = this.snakeManager.move();
@@ -414,6 +440,7 @@ export class SnakeGame {
             this.gameState.getPokerHandAnimations(),
             this.birdManager.getBirds(),
             this.gameState.getExplosionAnimations(),
+            this.gameState.getCardDrawAnimations(),
             this.gameState.getMultiplierExponent()
         );
         

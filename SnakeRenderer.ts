@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Bird, ExplosionAnimation, Achievement } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Bird, ExplosionAnimation, Achievement, CardDrawAnimation } from './types.js';
 
 export class SnakeRenderer {
     readonly cardColors = {
@@ -52,6 +52,7 @@ export class SnakeRenderer {
         pokerHandAnimations: PokerHandAnimation[],
         birds: Bird[],
         explosionAnimations: ExplosionAnimation[],
+        cardDrawAnimations: CardDrawAnimation[],
         multiplierExponent: number
     ): void {
         if (isGameOver) return;
@@ -73,6 +74,7 @@ export class SnakeRenderer {
         this.drawPokerHandAnimations(pokerHandAnimations);
         this.drawBirds(birds);
         this.drawExplosionAnimations(explosionAnimations);
+        this.drawCardDrawAnimations(cardDrawAnimations);
         this.drawHand(hand);
     }
 
@@ -857,5 +859,102 @@ export class SnakeRenderer {
                 this.ctx.restore();
             });
         });
+    }
+
+    private drawCardDrawAnimations(animations: CardDrawAnimation[]): void {
+        const currentTime = Date.now();
+        animations.forEach(anim => {
+            const elapsed = currentTime - anim.startTime;
+            const progress = Math.min(elapsed / anim.duration, 1);
+            
+            if (progress >= 1) {
+                // Animation complete, add card to hand immediately
+                return;
+            }
+
+            // Create a curved path using quadratic Bezier curve
+            const controlX = anim.startX + (anim.endX - anim.startX) * 0.5;
+            const controlY = anim.startY - 100; // Curve upward
+            
+            // Calculate position along the curve
+            const t = progress;
+            const x = Math.pow(1 - t, 2) * anim.startX + 2 * (1 - t) * t * controlX + Math.pow(t, 2) * anim.endX;
+            const y = Math.pow(1 - t, 2) * anim.startY + 2 * (1 - t) * t * controlY + Math.pow(t, 2) * anim.endY;
+            
+            // Add rotation effect
+            const rotation = progress * Math.PI * 0.5; // Rotate 90 degrees over the animation
+            
+            // Draw the card at the animated position
+            this.drawAnimatedCard(anim.card, x, y, rotation, progress);
+        });
+    }
+
+    private drawAnimatedCard(card: Card, x: number, y: number, rotation: number, progress: number): void {
+        const cardWidth = 60;
+        const cardHeight = 90;
+        
+        this.ctx.save();
+        
+        // Set transform for rotation around card center
+        this.ctx.translate(x + cardWidth / 2, y + cardHeight / 2);
+        this.ctx.rotate(rotation);
+        this.ctx.translate(-(x + cardWidth / 2), -(y + cardHeight / 2));
+        
+        // Add scale effect
+        const scale = 0.8 + progress * 0.2; // Start small and grow to full size
+        this.ctx.scale(scale, scale);
+        
+        // Adjust position for scaling
+        const scaledX = x + (cardWidth * (1 - scale)) / 2;
+        const scaledY = y + (cardHeight * (1 - scale)) / 2;
+        
+        // Draw card background with shadow
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.shadowOffsetX = 5;
+        this.ctx.shadowOffsetY = 5;
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(scaledX, scaledY, cardWidth, cardHeight);
+        this.ctx.shadowBlur = 0;
+        this.ctx.shadowOffsetX = 0;
+        this.ctx.shadowOffsetY = 0;
+        
+        // Draw card border
+        this.ctx.strokeStyle = card.suit === 'joker' ? '#000000' : this.cardColors[card.suit];
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(scaledX, scaledY, cardWidth, cardHeight);
+        
+        // Draw card content
+        this.ctx.fillStyle = card.suit === 'joker' ? '#000000' : this.cardColors[card.suit];
+        
+        if (card.suit === 'joker') {
+            // Draw joker symbol in center (question mark)
+            const suitSymbol = this.getSuitSymbol(card.suit);
+            this.ctx.font = '40px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(suitSymbol, scaledX + cardWidth/2, scaledY + cardHeight/2);
+        } else {
+            // Draw rank in top-left
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'left';
+            this.ctx.textBaseline = 'top';
+            this.ctx.fillText(card.rank, scaledX + 5, scaledY + 5);
+            
+            // Draw suit symbol in center
+            const suitSymbol = this.getSuitSymbol(card.suit);
+            this.ctx.font = '40px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(suitSymbol, scaledX + cardWidth/2, scaledY + cardHeight/2);
+            
+            // Draw rank in bottom-right (upside down)
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.textBaseline = 'bottom';
+            this.ctx.fillText(card.rank, scaledX + cardWidth - 5, scaledY + cardHeight - 5);
+        }
+        
+        this.ctx.restore();
     }
 } 

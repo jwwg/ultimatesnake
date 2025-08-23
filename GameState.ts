@@ -1,4 +1,4 @@
-import { Hand, PokerHandType, PokerHandAnimation, Card, ExplosionAnimation } from './types.js';
+import { Hand, PokerHandType, PokerHandAnimation, Card, ExplosionAnimation, CardDrawAnimation } from './types.js';
 
 export class GameState {
     private score: number = 0;
@@ -10,6 +10,7 @@ export class GameState {
     private hand: Hand = { cards: [], maxSize: 5 };
     private pokerHandAnimations: PokerHandAnimation[] = [];
     private explosionAnimations: ExplosionAnimation[] = [];
+    private cardDrawAnimations: CardDrawAnimation[] = [];
     private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] } | null = null;
     private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number; cards: Card[] } | null = null;
     private multiplierExponent: number = 1;
@@ -18,6 +19,7 @@ export class GameState {
     private handsPlayed: number = 0;
     private readonly MAX_HANDS: number = 5;
     private lastDeductionUpdate: number = Date.now();
+    private onHandFullCallback?: () => void;
 
     constructor() {
         this.highScore = Number(localStorage.getItem('snakeHighScore')) || 0;
@@ -45,6 +47,10 @@ export class GameState {
 
     getExplosionAnimations(): ExplosionAnimation[] {
         return this.explosionAnimations;
+    }
+
+    getCardDrawAnimations(): CardDrawAnimation[] {
+        return this.cardDrawAnimations;
     }
 
     getLastHandScore() {
@@ -79,7 +85,23 @@ export class GameState {
         this.score += points;
     }
 
-    addCardToHand(card: Card): void {
+    addCardToHand(card: Card, startX: number, startY: number, endX: number, endY: number): void {
+        if (this.hand.cards.length < this.hand.maxSize) {
+            // Create animation for the card
+            const animation: CardDrawAnimation = {
+                card,
+                startTime: Date.now(),
+                startX,
+                startY,
+                endX,
+                endY,
+                duration: 1000 // 1 second animation
+            };
+            this.addCardDrawAnimation(animation);
+        }
+    }
+
+    addCardToHandImmediate(card: Card): void {
         if (this.hand.cards.length < this.hand.maxSize) {
             this.hand.cards.push(card);
         }
@@ -98,6 +120,41 @@ export class GameState {
         this.pokerHandAnimations = this.pokerHandAnimations.filter(
             anim => currentTime - anim.startTime < 2000
         );
+    }
+
+    addCardDrawAnimation(animation: CardDrawAnimation): void {
+        this.cardDrawAnimations.push(animation);
+    }
+
+    setOnHandFullCallback(callback: () => void): void {
+        this.onHandFullCallback = callback;
+    }
+
+    updateCardDrawAnimations(): void {
+        const currentTime = Date.now();
+        const completedAnimations: CardDrawAnimation[] = [];
+        
+        this.cardDrawAnimations = this.cardDrawAnimations.filter(anim => {
+            const elapsed = currentTime - anim.startTime;
+            if (elapsed >= anim.duration) {
+                completedAnimations.push(anim);
+                return false;
+            }
+            return true;
+        });
+        
+        // Add completed cards to hand
+        completedAnimations.forEach(anim => {
+            this.addCardToHandImmediate(anim.card);
+        });
+        
+        // Check if hand is now full after adding cards
+        if (this.hand.cards.length === this.hand.maxSize) {
+            // Signal that hand evaluation should happen
+            if (this.onHandFullCallback) {
+                this.onHandFullCallback();
+            }
+        }
     }
 
     setLastHandScore(score: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] }): void {
@@ -167,6 +224,7 @@ export class GameState {
         this.highestHandScore = null;
         this.pokerHandAnimations = [];
         this.explosionAnimations = [];
+        this.cardDrawAnimations = [];
         this.multiplierExponent = 1;
         this.multiplierDeduction = 0;
         this.scoreLengthMultiplier = scoreLengthMultiplier;
