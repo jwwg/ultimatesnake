@@ -11,6 +11,8 @@ export class FoodManager {
     };
     private deck: { suit: CardSuit; rank: CardRank }[] = [];
     private isDeckEmpty: boolean = false;
+    private onFoodSpawnCallback?: (food: FoodItem) => void;
+    private onFoodReadyCallback?: (food: FoodItem) => void;
 
     constructor(tileCount: { x: number; y: number }, config: {
         maxFoodItems: number;
@@ -82,12 +84,23 @@ export class FoodManager {
             };
         } while (this.isPositionOccupied(position, snakePositions));
         
-        return {
+        const food: FoodItem = {
             ...position,
             createdAt: Date.now(),
             suit: card.suit,
             rank: card.rank
         };
+
+        // Notify callback about new food spawn (for animation)
+        if (this.onFoodSpawnCallback) {
+            this.onFoodSpawnCallback(food);
+        }
+        
+        return food;
+    }
+
+    addFoodToArray(food: FoodItem): void {
+        this.foods.push(food);
     }
 
     private isPositionOccupied(position: Position, snakePositions: Position[]): boolean {
@@ -123,7 +136,8 @@ export class FoodManager {
         // Ensure there's at least one food item if we have cards left
         if (this.foods.length === 0 && !this.isDeckEmpty) {
             try {
-                this.foods.push(this.generateFood(snakePositions));
+                const food = this.generateFood(snakePositions);
+                // Don't add to foods array immediately - wait for animation to complete
                 this.lastFoodGeneration = currentTime;
             } catch (error) {
                 // Deck is empty, game over
@@ -138,7 +152,8 @@ export class FoodManager {
             currentTime - this.lastFoodGeneration > this.config.minFoodInterval &&
             Math.random() < 0.1) {
             try {
-                this.foods.push(this.generateFood(snakePositions));
+                const food = this.generateFood(snakePositions);
+                // Don't add to foods array immediately - wait for animation to complete
                 this.lastFoodGeneration = currentTime;
             } catch (error) {
                 // Deck is empty, game over
@@ -170,6 +185,14 @@ export class FoodManager {
 
     getRemainingCards(): number {
         return this.deck.length;
+    }
+
+    setOnFoodSpawnCallback(callback: (food: FoodItem) => void): void {
+        this.onFoodSpawnCallback = callback;
+    }
+
+    setOnFoodReadyCallback(callback: (food: FoodItem) => void): void {
+        this.onFoodReadyCallback = callback;
     }
 
     addCardOfSuit(suit: CardSuit): { suit: CardSuit; rank: CardRank } | null {

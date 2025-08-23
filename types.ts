@@ -128,6 +128,16 @@ export interface CardDrawAnimation {
     duration: number;
 }
 
+export interface FoodSpawnAnimation {
+    food: FoodItem;
+    startTime: number;
+    duration: number;
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+}
+
 export interface GameState {
     score: number;
     hand: Hand;
@@ -151,6 +161,7 @@ export interface GameState {
     multiplierExponent: number;
     explosionAnimations: ExplosionAnimation[];
     cardDrawAnimations: CardDrawAnimation[];
+    foodSpawnAnimations: FoodSpawnAnimation[];
 }
 
 export interface Achievement {

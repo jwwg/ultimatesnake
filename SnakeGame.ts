@@ -54,6 +54,7 @@ export class SnakeGame {
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
         });
+        
         this.achievementsUI = new AchievementsUI(achievementManager);
         this.jokerDialog = new JokerDialog();
         this.birdManager = new BirdManager(this.tileCount, {
@@ -71,6 +72,25 @@ export class SnakeGame {
             const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
             this.handleHandScored(pokerScore, finalMultiplier, this.lastCollidedFood);
             this.lastCollidedFood = undefined; // Clear after use
+        });
+        
+        // Set up callback for when new food spawns
+        this.foodManager.setOnFoodSpawnCallback((food: FoodItem) => {
+            const { startX, startY, endX, endY } = this.calculateThrowingAnimation(food);
+            this.gameState.addFoodSpawnAnimation({
+                food,
+                startTime: Date.now(),
+                duration: 1200, // 1.2 second throwing animation
+                startX,
+                startY,
+                endX,
+                endY
+            });
+        });
+        
+        // Set up callback for when food animation completes
+        this.gameState.setOnFoodReadyCallback((food: FoodItem) => {
+            this.foodManager.addFoodToArray(food);
         });
         
 
@@ -330,6 +350,17 @@ export class SnakeGame {
         };
     }
 
+    private calculateThrowingAnimation(food: FoodItem): { startX: number; startY: number; endX: number; endY: number } {
+        const endX = food.x * this.config.gridSize;
+        const endY = food.y * this.config.gridSize;
+        
+        // Calculate the furthest corner from the food position
+        const startX = endX < this.canvas.width / 2 ? this.canvas.width : 0;
+        const startY = endY < this.canvas.height / 2 ? this.canvas.height : 0;
+        
+        return { startX, startY, endX, endY };
+    }
+
     private handleRegularCardCollision(food: FoodItem): void {
         // Calculate score based on snake length and card rank
         const rankValue = this.config.scorePerFood;
@@ -395,6 +426,7 @@ export class SnakeGame {
         this.gameState.updatePokerHandAnimations();
         this.gameState.updateExplosionAnimations();
         this.gameState.updateCardDrawAnimations();
+        this.gameState.updateFoodSpawnAnimations();
 
         // Move snake and check for collision
         const { newHead, collision } = this.snakeManager.move();
@@ -441,6 +473,7 @@ export class SnakeGame {
             this.birdManager.getBirds(),
             this.gameState.getExplosionAnimations(),
             this.gameState.getCardDrawAnimations(),
+            this.gameState.getFoodSpawnAnimations(),
             this.gameState.getMultiplierExponent()
         );
         
@@ -483,6 +516,26 @@ export class SnakeGame {
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
         });
+        
+        // Set up callback for when new food spawns
+        this.foodManager.setOnFoodSpawnCallback((food: FoodItem) => {
+            const { startX, startY, endX, endY } = this.calculateThrowingAnimation(food);
+            this.gameState.addFoodSpawnAnimation({
+                food,
+                startTime: Date.now(),
+                duration: 1200, // 1.2 second throwing animation
+                startX,
+                startY,
+                endX,
+                endY
+            });
+        });
+        
+        // Set up callback for when food animation completes
+        this.gameState.setOnFoodReadyCallback((food: FoodItem) => {
+            this.foodManager.addFoodToArray(food);
+        });
+        
         this.birdManager.reset();
         this.updateScoreDisplay();
         this.updateHandsCompletedDisplay();
@@ -525,6 +578,25 @@ export class SnakeGame {
             maxFoodItems: this.config.maxFoodItems,
             minFoodInterval: this.config.minFoodInterval,
             foodExpirationTime: this.config.foodExpirationTime
+        });
+        
+        // Set up callback for when new food spawns
+        this.foodManager.setOnFoodSpawnCallback((food: FoodItem) => {
+            const { startX, startY, endX, endY } = this.calculateThrowingAnimation(food);
+            this.gameState.addFoodSpawnAnimation({
+                food,
+                startTime: Date.now(),
+                duration: 1200, // 1.2 second throwing animation
+                startX,
+                startY,
+                endX,
+                endY
+            });
+        });
+        
+        // Set up callback for when food animation completes
+        this.gameState.setOnFoodReadyCallback((food: FoodItem) => {
+            this.foodManager.addFoodToArray(food);
         });
         
         this.draw();

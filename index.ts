@@ -10,6 +10,17 @@ const game = new SnakeGame();
 document.addEventListener('DOMContentLoaded', () => {
     initializeHelpDialog();
     initializeAchievementsDialog();
+    
+    // Show pokerserpent dialog on game load
+    const pokerserpentDialog = document.getElementById('pokerserpentDialog');
+    if (pokerserpentDialog) {
+        pokerserpentDialog.classList.add('show');
+        
+        // Close dialog when clicking on it
+        pokerserpentDialog.addEventListener('click', () => {
+            pokerserpentDialog.classList.remove('show');
+        });
+    }
 });
 
 // All dialog functionality

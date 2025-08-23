@@ -1,4 +1,4 @@
-import { Hand, PokerHandType, PokerHandAnimation, Card, ExplosionAnimation, CardDrawAnimation } from './types.js';
+import { Hand, PokerHandType, PokerHandAnimation, Card, ExplosionAnimation, CardDrawAnimation, FoodSpawnAnimation, FoodItem } from './types.js';
 
 export class GameState {
     private score: number = 0;
@@ -11,6 +11,7 @@ export class GameState {
     private pokerHandAnimations: PokerHandAnimation[] = [];
     private explosionAnimations: ExplosionAnimation[] = [];
     private cardDrawAnimations: CardDrawAnimation[] = [];
+    private foodSpawnAnimations: FoodSpawnAnimation[] = [];
     private lastHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] } | null = null;
     private highestHandScore: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; setAt: number; cards: Card[] } | null = null;
     private multiplierExponent: number = 1;
@@ -20,6 +21,7 @@ export class GameState {
     private readonly MAX_HANDS: number = 5;
     private lastDeductionUpdate: number = Date.now();
     private onHandFullCallback?: () => void;
+    private onFoodReadyCallback?: (food: FoodItem) => void;
 
     constructor() {
         this.highScore = Number(localStorage.getItem('snakeHighScore')) || 0;
@@ -51,6 +53,10 @@ export class GameState {
 
     getCardDrawAnimations(): CardDrawAnimation[] {
         return this.cardDrawAnimations;
+    }
+
+    getFoodSpawnAnimations(): FoodSpawnAnimation[] {
+        return this.foodSpawnAnimations;
     }
 
     getLastHandScore() {
@@ -126,8 +132,16 @@ export class GameState {
         this.cardDrawAnimations.push(animation);
     }
 
+    addFoodSpawnAnimation(animation: FoodSpawnAnimation): void {
+        this.foodSpawnAnimations.push(animation);
+    }
+
     setOnHandFullCallback(callback: () => void): void {
         this.onHandFullCallback = callback;
+    }
+
+    setOnFoodReadyCallback(callback: (food: FoodItem) => void): void {
+        this.onFoodReadyCallback = callback;
     }
 
     updateCardDrawAnimations(): void {
@@ -155,6 +169,28 @@ export class GameState {
                 this.onHandFullCallback();
             }
         }
+    }
+
+    updateFoodSpawnAnimations(): void {
+        const currentTime = Date.now();
+        const completedAnimations: FoodSpawnAnimation[] = [];
+        
+        this.foodSpawnAnimations = this.foodSpawnAnimations.filter(anim => {
+            const elapsed = currentTime - anim.startTime;
+            if (elapsed >= anim.duration) {
+                completedAnimations.push(anim);
+                return false;
+            }
+            return true;
+        });
+        
+        // Add completed food to the foods array
+        completedAnimations.forEach(anim => {
+            // Signal that the food is ready to be added to the foods array
+            if (this.onFoodReadyCallback) {
+                this.onFoodReadyCallback(anim.food);
+            }
+        });
     }
 
     setLastHandScore(score: { type: PokerHandType; baseScore: number; lengthMultiplier: number; finalScore: number; cards: Card[] }): void {
@@ -225,6 +261,7 @@ export class GameState {
         this.pokerHandAnimations = [];
         this.explosionAnimations = [];
         this.cardDrawAnimations = [];
+        this.foodSpawnAnimations = [];
         this.multiplierExponent = 1;
         this.multiplierDeduction = 0;
         this.scoreLengthMultiplier = scoreLengthMultiplier;

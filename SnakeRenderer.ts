@@ -1,4 +1,4 @@
-import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Bird, ExplosionAnimation, Achievement, CardDrawAnimation } from './types.js';
+import { Position, Direction, SnakeSegment, FoodItem, GameConfig, CardSuit, CardRank, SegmentType, Hand, Card, PokerHandAnimation, PokerHandType, Bird, ExplosionAnimation, Achievement, CardDrawAnimation, FoodSpawnAnimation } from './types.js';
 
 export class SnakeRenderer {
     readonly cardColors = {
@@ -53,6 +53,7 @@ export class SnakeRenderer {
         birds: Bird[],
         explosionAnimations: ExplosionAnimation[],
         cardDrawAnimations: CardDrawAnimation[],
+        foodSpawnAnimations: FoodSpawnAnimation[],
         multiplierExponent: number
     ): void {
         if (isGameOver) return;
@@ -69,12 +70,13 @@ export class SnakeRenderer {
         this.ctx.strokeRect(0, 0, gridWidth, gridHeight);
 
         this.drawSnake(snake);
-        this.drawFood(foods);
+        this.drawFood(foods, foodSpawnAnimations);
         this.drawDestructionAnimations();
         this.drawPokerHandAnimations(pokerHandAnimations);
         this.drawBirds(birds);
         this.drawExplosionAnimations(explosionAnimations);
         this.drawCardDrawAnimations(cardDrawAnimations);
+        this.drawFoodSpawnAnimations(foodSpawnAnimations);
         this.drawHand(hand);
     }
 
@@ -494,9 +496,19 @@ export class SnakeRenderer {
         this.ctx.lineTo(centerX - arrowWidth/2, y + size);
     }
 
-    drawFood(foods: FoodItem[]): void {
+    drawFood(foods: FoodItem[], foodSpawnAnimations: FoodSpawnAnimation[]): void {
         const currentTime = Date.now();
         foods.forEach(food => {
+            // Check if this food is currently being animated
+            const isAnimating = foodSpawnAnimations.some(anim => 
+                anim.food.x === food.x && anim.food.y === food.y
+            );
+            
+            // Skip drawing if the food is still being animated
+            if (isAnimating) {
+                return;
+            }
+            
             const timeLeft = this.config.foodExpirationTime - (currentTime - food.createdAt);
             const isExpiring = timeLeft < 2000;
             
@@ -956,5 +968,82 @@ export class SnakeRenderer {
         }
         
         this.ctx.restore();
+    }
+
+    private drawFoodSpawnAnimations(animations: FoodSpawnAnimation[]): void {
+        const currentTime = Date.now();
+        animations.forEach(anim => {
+            const elapsed = currentTime - anim.startTime;
+            const progress = Math.min(elapsed / anim.duration, 1);
+            
+            if (progress >= 1) {
+                return; // Animation complete
+            }
+
+            // Calculate current position along the throwing arc
+            const currentX = anim.startX + (anim.endX - anim.startX) * progress;
+            const currentY = anim.startY + (anim.endY - anim.startY) * progress;
+            
+            // Add a parabolic arc for realistic throwing motion
+            const arcHeight = 100; // Maximum height of the arc
+            const arcProgress = Math.sin(progress * Math.PI); // Creates a smooth arc
+            const arcY = currentY - (arcHeight * arcProgress);
+            
+            const size = this.config.gridSize - 2;
+
+            // Add rotation effect - card spins as it flies
+            const rotation = progress * Math.PI * 2; // Full 360 degree rotation
+            
+            // Add slight scale effect - card grows slightly as it lands
+            const scale = 0.8 + (progress * 0.2); // Start at 80% and grow to 100%
+            
+            this.ctx.save();
+            
+            // Apply transformations for the flying card
+            this.ctx.translate(currentX + size / 2, arcY + size / 2);
+            this.ctx.rotate(rotation);
+            this.ctx.scale(scale, scale);
+            this.ctx.translate(-(currentX + size / 2), -(arcY + size / 2));
+            
+            // Add shadow for depth
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowOffsetX = 5;
+            this.ctx.shadowOffsetY = 5;
+            
+            // Draw card background
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(currentX, arcY, size, size);
+            this.ctx.shadowBlur = 0;
+            this.ctx.shadowOffsetX = 0;
+            this.ctx.shadowOffsetY = 0;
+            
+            // Draw card border
+            this.ctx.strokeStyle = anim.food.suit === 'joker' ? '#000000' : this.cardColors[anim.food.suit];
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(currentX, arcY, size, size);
+            
+            // Draw card content
+            this.ctx.fillStyle = anim.food.suit === 'joker' ? '#000000' : this.cardColors[anim.food.suit];
+            this.ctx.font = `${size * 0.4}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            if (anim.food.suit === 'joker') {
+                // Draw joker symbol (question mark)
+                const suitSymbol = this.getSuitSymbol(anim.food.suit);
+                this.ctx.font = `${size * 0.5}px Arial`;
+                this.ctx.fillText(suitSymbol, currentX + size / 2, arcY + size / 2);
+            } else {
+                // Draw regular card content
+                this.ctx.fillText(anim.food.rank, currentX + size / 2, arcY + size * 0.3);
+                // Draw suit symbol
+                const suitSymbol = this.getSuitSymbol(anim.food.suit);
+                this.ctx.font = `${size * 0.5}px Arial`;
+                this.ctx.fillText(suitSymbol, currentX + size / 2, arcY + size * 0.7);
+            }
+            
+            this.ctx.restore();
+        });
     }
 } 
