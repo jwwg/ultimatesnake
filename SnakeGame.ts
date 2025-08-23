@@ -8,6 +8,7 @@ import { GameState } from './GameState.js';
 import { BirdManager } from './BirdManager.js';
 import { achievementManager } from './achievements.js';
 import { AchievementsUI } from './src/achievementsUI.js';
+import { JokerDialog, JokerOption } from './src/jokerDialog.js';
 
 export class SnakeGame {
     canvas: HTMLCanvasElement;
@@ -27,6 +28,7 @@ export class SnakeGame {
     private multiplierElement: HTMLElement;
     private handsCompletedElement: HTMLElement;
     private achievementsUI: AchievementsUI;
+    private jokerDialog: JokerDialog;
 
     private readonly LOW_CARDS_WARNING_THRESHOLD = 5;
 
@@ -51,6 +53,7 @@ export class SnakeGame {
             foodExpirationTime: this.config.foodExpirationTime
         });
         this.achievementsUI = new AchievementsUI(achievementManager);
+        this.jokerDialog = new JokerDialog();
         this.birdManager = new BirdManager(this.tileCount, {
             birdSpeed: this.config.birdSpeed,
             birdWidth: this.config.birdWidth,
@@ -186,6 +189,118 @@ export class SnakeGame {
         }
     }
 
+    private async handleJokerCollision(food: FoodItem): Promise<void> {
+        // Pause the game
+        this.gameState.togglePause();
+        if (this.gameLoop) {
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
+        }
+        
+        // Get the last card from the player's hand for context
+        const hand = this.gameState.getHand();
+        const lastCard = hand.cards.length > 0 ? hand.cards[hand.cards.length - 1] : null;
+        
+        // Check which options are available
+        const availableOptions = this.getAvailableJokerOptions(lastCard);
+        
+        // Show joker dialog with available options
+        const option = await this.jokerDialog.showJokerDialog(lastCard, availableOptions);
+        
+        // Handle the selected option
+        await this.handleJokerOption(option, lastCard);
+        
+        // Resume the game
+        this.gameState.togglePause();
+        this.gameLoop = window.setInterval(() => {
+            this.update();
+            this.draw();
+        }, this.speed);
+        
+        // Remove the joker card and grow snake
+        this.foodManager.removeFoodAt(food);
+        this.snakeManager.grow();
+    }
+
+    private getAvailableJokerOptions(lastCard: Card | null): { sameSuit: boolean; rankPlusOne: boolean; reshuffle: boolean } {
+        const sameSuit = !!(lastCard && lastCard.suit !== 'joker' && this.foodManager.hasCardOfSuit(lastCard.suit));
+        const rankPlusOne = !!(lastCard && lastCard.suit !== 'joker' && this.foodManager.hasCardOfRank(this.getNextRank(lastCard.rank)));
+        const reshuffle = true; // Reshuffle is always available
+        
+        return { sameSuit, rankPlusOne, reshuffle };
+    }
+
+    private async handleJokerOption(option: JokerOption, lastCard: Card | null): Promise<void> {
+        switch (option.id) {
+            case 'same-suit':
+                if (lastCard && lastCard.suit !== 'joker') {
+                    const newCard = this.foodManager.addCardOfSuit(lastCard.suit);
+                    if (newCard) {
+                        this.gameState.addCardToHand(newCard);
+                    }
+                }
+                break;
+                
+            case 'rank-plus-one':
+                if (lastCard && lastCard.suit !== 'joker') {
+                    const nextRank = this.getNextRank(lastCard.rank);
+                    const newCard = this.foodManager.addCardOfRank(nextRank);
+                    if (newCard) {
+                        this.gameState.addCardToHand(newCard);
+                    }
+                }
+                break;
+                
+            case 'reshuffle':
+                this.foodManager.reshuffleDeck();
+                break;
+        }
+    }
+
+    private getNextRank(rank: CardRank): CardRank {
+        const ranks: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const currentIndex = ranks.indexOf(rank);
+        const nextIndex = (currentIndex + 1) % ranks.length;
+        return ranks[nextIndex];
+    }
+
+    private handleRegularCardCollision(food: FoodItem): void {
+        // Calculate score based on snake length and card rank
+        const rankValue = this.config.scorePerFood;
+        const lengthBonus = Math.floor(this.snakeManager.getSnake().length * this.config.scoreLengthMultiplier);
+        this.gameState.addScore(rankValue + lengthBonus);
+        this.updateScoreDisplay();
+
+        // Add card to hand if there's space
+        this.gameState.addCardToHand({
+            suit: food.suit,
+            rank: food.rank
+        });
+
+        // Check if hand is full and evaluate poker hand
+        if (this.gameState.getHand().cards.length === this.gameState.getHand().maxSize) {
+            const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
+            const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
+            this.handleHandScored(pokerScore, finalMultiplier, food);
+        }
+        
+        // Grow snake
+        this.snakeManager.grow();
+        
+        // Remove food
+        this.foodManager.removeFoodAt(food);
+        
+        // Increase speed
+        //this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
+        if (this.gameLoop) {
+            clearInterval(this.gameLoop);
+            this.gameLoop = window.setInterval(() => {
+                this.update();
+                this.draw();
+            }, this.speed);
+        }
+    }
+
     private update(): void {
         if (this.gameState.isGameOverState() || this.gameState.isWaitingState() || this.gameState.isPausedState()) return;
 
@@ -231,39 +346,12 @@ export class SnakeGame {
         // Check for food collision
         const food = this.foodManager.getFoods().find(f => f.x === newHead.x && f.y === newHead.y);
         if (food) {
-            // Calculate score based on snake length and card rank
-            const rankValue = this.config.scorePerFood;
-            const lengthBonus = Math.floor(this.snakeManager.getSnake().length * this.config.scoreLengthMultiplier);
-            this.gameState.addScore(rankValue + lengthBonus);
-            this.updateScoreDisplay();
-
-            // Add card to hand if there's space
-            this.gameState.addCardToHand({
-                suit: food.suit,
-                rank: food.rank
-            });
-
-            // Check if hand is full and evaluate poker hand
-            if (this.gameState.getHand().cards.length === this.gameState.getHand().maxSize) {
-                const pokerScore = this.pokerHandEvaluator.evaluatePokerHand(this.gameState.getHand());
-                const finalMultiplier = this.gameState.getMultiplier(this.snakeManager.getSnake().length);
-                this.handleHandScored(pokerScore, finalMultiplier, food);
-            }
-            
-            // Grow snake
-            this.snakeManager.grow();
-            
-            // Remove food
-            this.foodManager.removeFoodAt(food);
-            
-            // Increase speed
-            //this.speed = Math.max(this.config.minSpeed, this.speed - this.config.speedDecrease);
-            if (this.gameLoop) {
-                clearInterval(this.gameLoop);
-                this.gameLoop = window.setInterval(() => {
-                    this.update();
-                    this.draw();
-                }, this.speed);
+            // Check if it's a joker card
+            if (food.suit === 'joker') {
+                this.handleJokerCollision(food);
+            } else {
+                // Handle regular card collision
+                this.handleRegularCardCollision(food);
             }
         }
     }

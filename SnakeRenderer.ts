@@ -5,7 +5,8 @@ export class SnakeRenderer {
         hearts: '#ff0000',
         diamonds: '#ff0000',
         clubs: '#000000',
-        spades: '#000000'
+        spades: '#000000',
+        joker: '#ff6b35'
     } as const;
 
     readonly segmentColors = {
@@ -424,21 +425,31 @@ export class SnakeRenderer {
             this.ctx.globalAlpha = 1;
 
             // Draw card border
-            this.ctx.strokeStyle = this.cardColors[food.suit];
+            this.ctx.strokeStyle = food.suit === 'joker' ? '#000000' : this.cardColors[food.suit];
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(x, y, size, size);
+            
+
 
             // Draw card content
-            this.ctx.fillStyle = this.cardColors[food.suit];
+            this.ctx.fillStyle = food.suit === 'joker' ? '#000000' : this.cardColors[food.suit];
             this.ctx.font = `${size * 0.4}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(food.rank, x + size / 2, y + size * 0.3);
             
-            // Draw suit symbol
-            const suitSymbol = this.getSuitSymbol(food.suit);
-            this.ctx.font = `${size * 0.5}px Arial`;
-            this.ctx.fillText(suitSymbol, x + size / 2, y + size * 0.7);
+            if (food.suit === 'joker') {
+                // Draw joker symbol (question mark)
+                const suitSymbol = this.getSuitSymbol(food.suit);
+                this.ctx.font = `${size * 0.5}px Arial`;
+                this.ctx.fillText(suitSymbol, x + size / 2, y + size / 2);
+            } else {
+                // Draw regular card content
+                this.ctx.fillText(food.rank, x + size / 2, y + size * 0.3);
+                // Draw suit symbol
+                const suitSymbol = this.getSuitSymbol(food.suit);
+                this.ctx.font = `${size * 0.5}px Arial`;
+                this.ctx.fillText(suitSymbol, x + size / 2, y + size * 0.7);
+            }
         });
     }
 
@@ -448,6 +459,7 @@ export class SnakeRenderer {
             case 'diamonds': return '♦';
             case 'clubs': return '♣';
             case 'spades': return '♠';
+            case 'joker': return '?';
         }
     }
 
@@ -495,28 +507,41 @@ export class SnakeRenderer {
             this.ctx.strokeStyle = '#000000';
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(x, y, cardWidth, cardHeight);
+            
+
 
             // Draw card content
-            this.ctx.fillStyle = this.cardColors[card.suit];
+            this.ctx.fillStyle = card.suit === 'joker' ? '#000000' : this.cardColors[card.suit];
             
-            // Draw rank in top-left
-            this.ctx.font = '20px Arial';
-            this.ctx.textAlign = 'left';
-            this.ctx.textBaseline = 'top';
-            this.ctx.fillText(card.rank, x + 5, y + 5);
+            if (card.suit === 'joker') {
 
-            // Draw suit symbol in center
-            const suitSymbol = this.getSuitSymbol(card.suit);
-            this.ctx.font = '40px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(suitSymbol, x + cardWidth/2, y + cardHeight/2);
+                // Draw joker symbol in center (question mark)
+                const suitSymbol = this.getSuitSymbol(card.suit);
+                this.ctx.font = '40px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(suitSymbol, x + cardWidth/2, y + cardHeight/2);
 
-            // Draw rank in bottom-right (upside down)
-            this.ctx.font = '20px Arial';
-            this.ctx.textAlign = 'right';
-            this.ctx.textBaseline = 'bottom';
-            this.ctx.fillText(card.rank, x + cardWidth - 5, y + cardHeight - 5);
+            } else {
+                // Draw rank in top-left
+                this.ctx.font = '20px Arial';
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'top';
+                this.ctx.fillText(card.rank, x + 5, y + 5);
+
+                // Draw suit symbol in center
+                const suitSymbol = this.getSuitSymbol(card.suit);
+                this.ctx.font = '40px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(suitSymbol, x + cardWidth/2, y + cardHeight/2);
+
+                // Draw rank in bottom-right (upside down)
+                this.ctx.font = '20px Arial';
+                this.ctx.textAlign = 'right';
+                this.ctx.textBaseline = 'bottom';
+                this.ctx.fillText(card.rank, x + cardWidth - 5, y + cardHeight - 5);
+            }
         });
 
         // Draw empty card slots
@@ -576,28 +601,39 @@ export class SnakeRenderer {
             this.ctx.strokeStyle = '#000000';
             this.ctx.lineWidth = 1 * scale;
             this.ctx.strokeRect(cardX, cardY, cardWidth, cardHeight);
+            
+
 
             // Draw card content
-            this.ctx.fillStyle = this.cardColors[card.suit];
+            this.ctx.fillStyle = card.suit === 'joker' ? '#000000' : this.cardColors[card.suit];
             
-            // Draw rank in top-left
-            this.ctx.font = `${12 * scale}px Arial`;
-            this.ctx.textAlign = 'left';
-            this.ctx.textBaseline = 'top';
-            this.ctx.fillText(card.rank, cardX + 2 * scale, cardY + 2 * scale);
+            if (card.suit === 'joker') {
+                // Draw joker symbol in center (question mark)
+                const suitSymbol = this.getSuitSymbol(card.suit);
+                this.ctx.font = `${24 * scale}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(suitSymbol, cardX + cardWidth/2, cardY + cardHeight/2);
+            } else {
+                // Draw rank in top-left
+                this.ctx.font = `${12 * scale}px Arial`;
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'top';
+                this.ctx.fillText(card.rank, cardX + 2 * scale, cardY + 2 * scale);
 
-            // Draw suit symbol in center
-            const suitSymbol = this.getSuitSymbol(card.suit);
-            this.ctx.font = `${24 * scale}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(suitSymbol, cardX + cardWidth/2, cardY + cardHeight/2);
+                // Draw suit symbol in center
+                const suitSymbol = this.getSuitSymbol(card.suit);
+                this.ctx.font = `${24 * scale}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(suitSymbol, cardX + cardWidth/2, cardY + cardHeight/2);
 
-            // Draw rank in bottom-right (upside down)
-            this.ctx.font = `${12 * scale}px Arial`;
-            this.ctx.textAlign = 'right';
-            this.ctx.textBaseline = 'bottom';
-            this.ctx.fillText(card.rank, cardX + cardWidth - 2 * scale, cardY + cardHeight - 2 * scale);
+                // Draw rank in bottom-right (upside down)
+                this.ctx.font = `${12 * scale}px Arial`;
+                this.ctx.textAlign = 'right';
+                this.ctx.textBaseline = 'bottom';
+                this.ctx.fillText(card.rank, cardX + cardWidth - 2 * scale, cardY + cardHeight - 2 * scale);
+            }
         });
     }
 

@@ -35,6 +35,11 @@ export class FoodManager {
             }
         }
         
+        // Add 4 jokers to the deck
+        for (let i = 0; i < 4; i++) {
+            this.deck.push({ suit: 'joker', rank: 'JOKER' });
+        }
+        
         // Shuffle the deck
         for (let i = this.deck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -47,6 +52,19 @@ export class FoodManager {
             this.isDeckEmpty = true;
             return null;
         }
+        
+        // For debugging: make the second card always be a joker
+        const cardsDrawn = 52 + 4 - this.deck.length; // 52 regular cards + 4 jokers - remaining cards
+        if (cardsDrawn === 1) {
+            // Find and return a joker card
+            const jokerIndex = this.deck.findIndex(card => card.suit === 'joker');
+            if (jokerIndex !== -1) {
+                const joker = this.deck[jokerIndex];
+                this.deck.splice(jokerIndex, 1);
+                return joker;
+            }
+        }
+        
         return this.deck.pop()!;
     }
 
@@ -152,5 +170,68 @@ export class FoodManager {
 
     getRemainingCards(): number {
         return this.deck.length;
+    }
+
+    addCardOfSuit(suit: CardSuit): { suit: CardSuit; rank: CardRank } | null {
+        // Find cards of the specified suit that are actually in the deck
+        const availableCards = this.deck.filter(card => card.suit === suit);
+        
+        if (availableCards.length === 0) {
+            return null; // No cards of this suit in the deck
+        }
+        
+        // Pick a random card of that suit from the deck
+        const randomIndex = Math.floor(Math.random() * availableCards.length);
+        const selectedCard = availableCards[randomIndex];
+        
+        // Remove the card from the deck
+        this.deck.splice(this.deck.indexOf(selectedCard), 1);
+        
+        return selectedCard;
+    }
+
+    addCardOfRank(rank: CardRank): { suit: CardSuit; rank: CardRank } | null {
+        // Find cards of the specified rank that are actually in the deck
+        const availableCards = this.deck.filter(card => card.rank === rank);
+        
+        if (availableCards.length === 0) {
+            return null; // No cards of this rank in the deck
+        }
+        
+        // Pick a random card of that rank from the deck
+        const randomIndex = Math.floor(Math.random() * availableCards.length);
+        const selectedCard = availableCards[randomIndex];
+        
+        // Remove the card from the deck
+        this.deck.splice(this.deck.indexOf(selectedCard), 1);
+        
+        return selectedCard;
+    }
+
+    hasCardOfSuit(suit: CardSuit): boolean {
+        return this.deck.some(card => card.suit === suit);
+    }
+
+    hasCardOfRank(rank: CardRank): boolean {
+        return this.deck.some(card => card.rank === rank);
+    }
+
+    reshuffleDeck(): void {
+        // Get all cards from the board and add them back to the deck
+        for (const food of this.foods) {
+            this.deck.push({ suit: food.suit, rank: food.rank });
+        }
+        
+        // Clear the board
+        this.foods = [];
+        
+        // Shuffle the deck
+        for (let i = this.deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+        }
+        
+        // Reset deck empty flag
+        this.isDeckEmpty = false;
     }
 } 
