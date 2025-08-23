@@ -8,6 +8,8 @@ export class JokerDialog {
     private dialog: HTMLDivElement | null = null;
     private resolvePromise: ((option: JokerOption) => void) | null = null;
     private escapeHandler: ((event: KeyboardEvent) => void) | null = null;
+    private optionButtons: HTMLButtonElement[] = [];
+    private selectedIndex: number = 0;
 
     showJokerDialog(lastCard: { suit: string; rank: string } | null, availableOptions?: { sameSuit: boolean; rankPlusOne: boolean; reshuffle: boolean }): Promise<JokerOption> {
         return new Promise((resolve) => {
@@ -19,6 +21,10 @@ export class JokerDialog {
     private createDialog(lastCard: { suit: string; rank: string } | null, availableOptions?: { sameSuit: boolean; rankPlusOne: boolean; reshuffle: boolean }): void {
         // Remove existing dialog if any
         this.removeDialog();
+
+        // Reset state
+        this.optionButtons = [];
+        this.selectedIndex = 0;
 
         // Create dialog container
         this.dialog = document.createElement('div');
@@ -116,11 +122,6 @@ export class JokerDialog {
                 opacity: ${isAvailable ? '1' : '0.6'};
             `;
 
-            optionButton.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 5px; color: #ff6b35;">${option.title}</div>
-                <div style="font-size: 14px; color: #bdc3c7;">${option.description}</div>
-            `;
-
             if (isAvailable) {
                 optionButton.innerHTML = `
                     <div style="font-weight: bold; margin-bottom: 5px; color: #ff6b35;">${option.title}</div>
@@ -128,18 +129,19 @@ export class JokerDialog {
                 `;
                 
                 optionButton.addEventListener('mouseenter', () => {
-                    optionButton.style.backgroundColor = '#ff6b35';
-                    optionButton.style.transform = 'scale(1.02)';
+                    this.setSelectedIndex(index);
                 });
 
                 optionButton.addEventListener('mouseleave', () => {
-                    optionButton.style.backgroundColor = '#34495e';
-                    optionButton.style.transform = 'scale(1)';
+                    // Don't change selection on mouse leave to maintain keyboard focus
                 });
 
                 optionButton.addEventListener('click', () => {
                     this.selectOption(option);
                 });
+
+                // Add to buttons array for keyboard navigation
+                this.optionButtons.push(optionButton);
             } else {
                 // Add disabled text to the description
                 optionButton.innerHTML = `
@@ -153,19 +155,81 @@ export class JokerDialog {
         });
 
         content.appendChild(optionsContainer);
+
+        // Add keyboard controls instruction
+        const keyboardInstruction = document.createElement('div');
+        keyboardInstruction.style.cssText = `
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #34495e;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #bdc3c7;
+            border: 1px solid #ff6b35;
+        `;
+        keyboardInstruction.innerHTML = `
+            <strong>Keyboard Controls:</strong><br>
+            ↑↓ Arrow keys or W/S to navigate • Space to select
+        `;
+        content.appendChild(keyboardInstruction);
+
         this.dialog.appendChild(content);
         document.body.appendChild(this.dialog);
 
-        // Add escape key listener
+        // Add keyboard event listener
         this.escapeHandler = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 this.selectOption(options[0]); // Default to first option
+            } else if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') {
+                event.preventDefault();
+                this.moveSelection(-1);
+            } else if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') {
+                event.preventDefault();
+                this.moveSelection(1);
+            } else if (event.key === ' ') {
+                event.preventDefault();
+                const selectedOption = options[this.selectedIndex];
+                if (selectedOption) {
+                    this.selectOption(selectedOption);
+                }
             }
         };
         document.addEventListener('keydown', this.escapeHandler);
+
         this.dialog.addEventListener('click', (event) => {
             if (event.target === this.dialog) {
                 this.selectOption(options[0]); // Default to first option
+            }
+        });
+
+        // Set initial selection
+        this.updateSelection();
+    }
+
+    private moveSelection(direction: number): void {
+        if (this.optionButtons.length === 0) return;
+        
+        this.selectedIndex = (this.selectedIndex + direction + this.optionButtons.length) % this.optionButtons.length;
+        this.updateSelection();
+    }
+
+    private setSelectedIndex(index: number): void {
+        if (index >= 0 && index < this.optionButtons.length) {
+            this.selectedIndex = index;
+            this.updateSelection();
+        }
+    }
+
+    private updateSelection(): void {
+        this.optionButtons.forEach((button, index) => {
+            if (index === this.selectedIndex) {
+                button.style.backgroundColor = '#ff6b35';
+                button.style.transform = 'scale(1.02)';
+                button.style.borderColor = '#ff6b35';
+            } else {
+                button.style.backgroundColor = '#34495e';
+                button.style.transform = 'scale(1)';
+                button.style.borderColor = '#ff6b35';
             }
         });
     }

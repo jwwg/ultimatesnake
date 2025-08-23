@@ -699,7 +699,7 @@ export class SnakeRenderer {
         this.ctx.textAlign = 'center';
         this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2 - 30);
         this.ctx.font = '20px Arial';
-        this.ctx.fillText('Press P or click Pause to resume', this.canvas.width / 2, this.canvas.height / 2 + 10);
+        this.ctx.fillText('Press P to resume', this.canvas.width / 2, this.canvas.height / 2 + 10);
     }
 
     drawPokerHandAnimations(pokerHandAnimations: PokerHandAnimation[]): void {

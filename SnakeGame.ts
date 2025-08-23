@@ -78,9 +78,29 @@ export class SnakeGame {
 
     private setupEventListeners(): void {
         document.addEventListener('keydown', this.handleKeyPress.bind(this));
-        document.getElementById('startButton')?.addEventListener('click', () => this.startGame());
-        document.getElementById('pauseButton')?.addEventListener('click', () => this.togglePause());
+        document.getElementById('playPauseIcon')?.addEventListener('click', () => this.handlePlayPauseClick());
         window.addEventListener('resize', () => this.handleResize());
+    }
+
+    private handlePlayPauseClick(): void {
+        if (this.gameState.isWaitingState()) {
+            this.startGame();
+        } else if (!this.gameState.isGameOverState()) {
+            this.togglePause();
+        }
+    }
+
+    private updatePlayPauseIcon(): void {
+        const playPauseIcon = document.getElementById('playPauseIcon') as HTMLElement;
+        if (playPauseIcon) {
+            if (this.gameState.isWaitingState()) {
+                playPauseIcon.textContent = 'GO!';
+            } else if (this.gameState.isPausedState()) {
+                playPauseIcon.textContent = 'PAUSED';
+            } else {
+                playPauseIcon.textContent = 'GO!';
+            }
+        }
     }
 
     private handleKeyPress(event: KeyboardEvent): void {
@@ -425,6 +445,7 @@ export class SnakeGame {
         this.birdManager.reset();
         this.updateScoreDisplay();
         this.updateHandsCompletedDisplay();
+        this.updatePlayPauseIcon();
         this.startCountdown();
     }
 
@@ -438,6 +459,7 @@ export class SnakeGame {
             if (count < 0) {
                 clearInterval(countdownInterval);
                 this.gameState.setWaiting(false);
+                this.updatePlayPauseIcon();
                 this.gameLoop = window.setInterval(() => {
                     this.update();
                     this.draw();
@@ -470,8 +492,7 @@ export class SnakeGame {
         if (this.gameState.isGameOverState() || this.gameState.isWaitingState()) return;
         
         this.gameState.togglePause();
-        const pauseButton = document.getElementById('pauseButton');
-        if (pauseButton) pauseButton.textContent = this.gameState.isPausedState() ? 'Resume' : 'Pause';
+        this.updatePlayPauseIcon();
         
         if (this.gameState.isPausedState()) {
             if (this.gameLoop) clearInterval(this.gameLoop);

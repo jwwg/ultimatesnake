@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Pause the game if it's running
         if (game && 'gameState' in game && !game.gameState.isPausedState()) {
             game.gameState.togglePause();
-            const pauseButton = document.getElementById('pauseButton');
-            if (pauseButton) {
-                pauseButton.textContent = 'Resume';
+            const playPauseIcon = document.getElementById('playPauseIcon') as HTMLElement;
+            if (playPauseIcon) {
+                playPauseIcon.textContent = 'PAUSE';
             }
         }
         helpDialog?.classList.add('show');

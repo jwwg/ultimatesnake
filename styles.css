@@ -68,50 +68,7 @@ h1 {
     color: #FFD700;
 }
 
-#startButton {
-    padding: 0.8rem 2rem;
-    font-size: 1.1rem;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
 
-#startButton:hover {
-    background: #45a049;
-}
-
-#startButton:active {
-    transform: scale(0.98);
-}
-
-.button-container {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 1rem;
-}
-
-#pauseButton {
-    padding: 0.8rem 2rem;
-    font-size: 1.1rem;
-    background: #ff9800;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-#pauseButton:hover {
-    background: #f57c00;
-}
-
-#pauseButton:active {
-    transform: scale(0.98);
-}
 
 #handsCompleted.warning {
     color: #ff4444;
@@ -136,6 +93,27 @@ h1 {
 .header h1 {
     margin: 0;
     padding: 0;
+}
+
+
+
+#playPauseIcon {
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #FFD700;
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 20px;
+    background-color: rgba(255, 215, 0, 0.1);
+    border: 2px solid #FFD700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#playPauseIcon:hover {
+    background-color: rgba(255, 215, 0, 0.2);
+    color: #FFA500;
 }
 
 .header-icons {
