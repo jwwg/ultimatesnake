@@ -22,8 +22,8 @@ export class FoodManager {
         this.tileCount = tileCount;
         this.config = config;
         this.initializeDeck();
-        // Generate initial food
-        this.foods = [this.generateFood([])];
+        // Don't generate initial food - wait for game to start
+        this.foods = [];
     }
 
     private initializeDeck(): void {
@@ -237,6 +237,13 @@ export class FoodManager {
 
     hasCardOfRank(rank: CardRank): boolean {
         return this.deck.some(card => card.rank === rank);
+    }
+
+    startGeneratingFood(): void {
+        // Generate initial food when game starts
+        if (this.foods.length === 0) {
+            this.foods = [this.generateFood([])];
+        }
     }
 
     reshuffleDeck(): void {

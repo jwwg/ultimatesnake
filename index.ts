@@ -6,22 +6,45 @@ import { initializeAchievementsDialog } from './src/achievementsDialog.js';
 // Initialize the game
 const game = new SnakeGame();
 
-// Initialize dialogs
-document.addEventListener('DOMContentLoaded', () => {
-    initializeHelpDialog();
-    initializeAchievementsDialog();
+// Initialize dialogs immediately since script loads at end of body
+initializeHelpDialog();
+initializeAchievementsDialog();
+
+// Show pokerserpent dialog on game load
+console.log('Looking for pokerserpentDialog...');
+const pokerserpentDialog = document.getElementById('pokerserpentDialog');
+console.log('pokerserpentDialog element:', pokerserpentDialog);
+if (pokerserpentDialog) {
+    console.log('Adding show class to pokerserpentDialog');
+    pokerserpentDialog.classList.add('show');
+    console.log('pokerserpentDialog classes after adding show:', pokerserpentDialog.className);
     
-    // Show pokerserpent dialog on game load
-    const pokerserpentDialog = document.getElementById('pokerserpentDialog');
-    if (pokerserpentDialog) {
-        pokerserpentDialog.classList.add('show');
-        
-        // Close dialog when clicking on it
-        pokerserpentDialog.addEventListener('click', () => {
-            pokerserpentDialog.classList.remove('show');
-        });
+    // Set random tagline
+    const taglineElement = document.getElementById('tagline');
+    if (taglineElement) {
+        const taglines = [
+            'Where Snakes and Cards Collide',
+            'No bugs were harmed in the making of this game',
+            'May contain debug code',
+            'This is a joke',
+            'Established 1652',
+            'Product of 127.0.0.1',
+            'Please ignore the console log lines',
+            'SLITHER!',
+            'YATHZEE!'
+        ];
+        const randomTagline = taglines[Math.floor(Math.random() * taglines.length)];
+        taglineElement.textContent = randomTagline;
     }
-});
+    
+    // Close dialog when clicking on it
+    pokerserpentDialog.addEventListener('click', () => {
+        console.log('pokerserpentDialog clicked, removing show class');
+        pokerserpentDialog.classList.remove('show');
+    });
+} else {
+    console.log('pokerserpentDialog element not found!');
+}
 
 // All dialog functionality
 const settingsDialog = document.getElementById('settingsDialog');

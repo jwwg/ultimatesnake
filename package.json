@@ -5,9 +5,11 @@
     "main": "dist/game.js",
     "scripts": {
         "build": "vite build",
+        "build:standalone": "vite build && node build-standalone.js",
         "dev": "vite",
         "preview": "vite preview",
-        "serve": "serve dist"
+        "serve": "serve dist",
+        "start": "npm run build && npm run serve"
     },
     "devDependencies": {
         "typescript": "^5.0.0",

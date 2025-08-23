@@ -451,6 +451,12 @@ export class SnakeGame {
     private draw(): void {
         if (this.gameState.isGameOverState()) return;
         
+        // Show start screen if game is in waiting state
+        if (this.gameState.isWaitingState()) {
+            this.renderer.drawStartScreen();
+            return;
+        }
+        
         const hand = this.gameState.getHand();
         const lastHandScore = this.gameState.getLastHandScore();
         const highestHandScore = this.gameState.getHighestHandScore();
@@ -536,6 +542,9 @@ export class SnakeGame {
             this.foodManager.addFoodToArray(food);
         });
         
+        // Start generating food
+        this.foodManager.startGeneratingFood();
+        
         this.birdManager.reset();
         this.updateScoreDisplay();
         this.updateHandsCompletedDisplay();
@@ -546,9 +555,11 @@ export class SnakeGame {
 
     private startCountdown(): void {
         let count = 2;
+        
+        // Show the first countdown number immediately
+        this.renderer.drawCountdown(count);
+        
         const countdownInterval = setInterval(() => {
-            this.renderer.drawCountdown(count);
-            
             count--;
             
             if (count < 0) {
@@ -559,6 +570,8 @@ export class SnakeGame {
                     this.update();
                     this.draw();
                 }, this.speed);
+            } else {
+                this.renderer.drawCountdown(count);
             }
         }, 1000);
     }
@@ -598,6 +611,11 @@ export class SnakeGame {
         this.gameState.setOnFoodReadyCallback((food: FoodItem) => {
             this.foodManager.addFoodToArray(food);
         });
+        
+        // Only start generating food if game is not in waiting state
+        if (!this.gameState.isWaitingState()) {
+            this.foodManager.startGeneratingFood();
+        }
         
         this.draw();
     }

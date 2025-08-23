@@ -5,24 +5,29 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html')
-      },
+      input: resolve(__dirname, 'index.html'),
       output: {
         manualChunks: undefined,
         inlineDynamicImports: true,
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
-        assetFileNames: '[name][extname]'
-      }
+        entryFileNames: 'game.js',
+        chunkFileNames: 'game.js',
+        assetFileNames: '[name][extname]',
+        format: 'iife',
+        name: 'PokerSerpent'
+      },
+      external: []
     },
-    assetsInlineLimit: 100000000, // This will inline all assets
-    cssCodeSplit: false, // This will bundle all CSS into a single file
-    minify: true
+    assetsInlineLimit: 100000000,
+    cssCodeSplit: false,
+    minify: true,
+    target: 'es2015',
+    lib: false
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './')
     }
-  }
+  },
+  base: './',
+  publicDir: 'public'
 }) 

@@ -805,6 +805,36 @@ export class SnakeRenderer {
         this.ctx.fillText('Press P to resume', this.canvas.width / 2, this.canvas.height / 2 + 10);
     }
 
+    drawStartScreen(): void {
+        // Clear canvas with dark background
+        this.ctx.fillStyle = '#000000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw grid border
+        const gridWidth = this.tileCount.x * this.config.gridSize;
+        const gridHeight = this.tileCount.y * this.config.gridSize;
+        this.ctx.strokeStyle = 'rgb(29, 29, 29)'; //dark grey
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(0, 0, gridWidth, gridHeight);
+
+        // Draw semi-transparent overlay
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw start message
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 36px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('POKER SNAKE', this.canvas.width / 2, this.canvas.height / 2 - 80);
+        
+        this.ctx.font = '24px Arial';
+        this.ctx.fillText('Click GO to start the game!', this.canvas.width / 2, this.canvas.height / 2 - 20);
+        
+        this.ctx.font = '18px Arial';
+        this.ctx.fillText('Use arrow keys or WASD to move', this.canvas.width / 2, this.canvas.height / 2 + 20);
+        this.ctx.fillText('Collect cards to make poker hands', this.canvas.width / 2, this.canvas.height / 2 + 50);
+    }
+
     drawPokerHandAnimations(pokerHandAnimations: PokerHandAnimation[]): void {
         const currentTime = Date.now();
         pokerHandAnimations.forEach(anim => {

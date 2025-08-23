@@ -20,6 +20,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpDialog = document.getElementById('helpDialog');
     const closeHelpDialog = document.getElementById('closeHelpDialog');
 
+    // Show pokerserpent dialog on game load
+    console.log('Looking for pokerserpentDialog...');
+    const pokerserpentDialog = document.getElementById('pokerserpentDialog');
+    console.log('pokerserpentDialog element:', pokerserpentDialog);
+    if (pokerserpentDialog) {
+        console.log('Adding show class to pokerserpentDialog');
+        pokerserpentDialog.classList.add('show');
+        console.log('pokerserpentDialog classes after adding show:', pokerserpentDialog.className);
+        
+        // Close dialog when clicking on it
+        pokerserpentDialog.addEventListener('click', () => {
+            console.log('pokerserpentDialog clicked, removing show class');
+            pokerserpentDialog.classList.remove('show');
+        });
+    } else {
+        console.log('pokerserpentDialog element not found!');
+    }
+
     // Check if this is the first time playing
     const hasPlayedBefore = localStorage.getItem('hasPlayedBefore');
     if (!hasPlayedBefore) {
