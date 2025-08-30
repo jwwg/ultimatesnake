@@ -298,8 +298,7 @@ export class SnakeGame {
             this.draw();
         }, this.speed);
         
-        // Remove the joker card and grow snake
-        this.foodManager.removeFoodAt(food);
+        // Grow snake (food already removed)
         this.snakeManager.grow();
     }
 
@@ -392,11 +391,8 @@ export class SnakeGame {
         // Store the food item for the callback
         this.lastCollidedFood = food;
         
-        // Grow snake
+        // Grow snake (food already removed)
         this.snakeManager.grow();
-        
-        // Remove food
-        this.foodManager.removeFoodAt(food);
         
         // Remove the unnecessary game loop restart
         // The game loop should continue running at the same speed
@@ -450,6 +446,9 @@ export class SnakeGame {
         // Check for food collision
         const food = this.foodManager.getFoods().find(f => f.x === newHead.x && f.y === newHead.y);
         if (food) {
+            // Immediately remove the food to prevent double pickup
+            this.foodManager.removeFoodAt(food);
+            
             // Check if it's a joker card
             if (food.suit === 'joker') {
                 this.handleJokerCollision(food);

@@ -74,5 +74,6 @@ export const defaultConfig: GameConfig = {
     birdWidth: 40, // Width of the bird
     birdHeight: 20, // Height of the bird
     maxMultiplierExponent: 10, // Maximum value for the multiplier exponent
-    multiplierDeductionRate: 0.0 // Rate at which the multiplier deduction increases per second
+    multiplierDeductionRate: 0.0, // Rate at which the multiplier deduction increases per second
+    snakeConnectorThickness: 10 // Thickness of lines connecting snake segments
 }; 

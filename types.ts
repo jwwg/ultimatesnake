@@ -77,6 +77,7 @@ export interface GameConfig {
     birdHeight: number;
     maxMultiplierExponent: number;
     multiplierDeductionRate: number;
+    snakeConnectorThickness: number; // Thickness of lines connecting snake segments
 }
 
 export type PokerHandType = 

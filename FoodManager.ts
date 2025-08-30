@@ -2,6 +2,7 @@ import { FoodItem, CardSuit, CardRank, Position } from './types.js';
 
 export class FoodManager {
     private foods: FoodItem[] = [];
+    private collectedFoods: Set<string> = new Set(); // Track collected foods by position
     private lastFoodGeneration: number = Date.now();
     private readonly tileCount: { x: number; y: number };
     private readonly config: {
@@ -25,6 +26,7 @@ export class FoodManager {
         this.initializeDeck();
         // Don't generate initial food - wait for game to start
         this.foods = [];
+        this.collectedFoods.clear();
     }
 
     private initializeDeck(): void {
@@ -92,6 +94,15 @@ export class FoodManager {
     }
 
     addFoodToArray(food: FoodItem): void {
+        // Check if this food position has been collected
+        const foodKey = `${food.x},${food.y}`;
+        if (this.collectedFoods.has(foodKey)) {
+            // This food was collected, don't add it back
+            this.collectedFoods.delete(foodKey); // Clean up the tracking
+            this.hasOngoingSpawnAnimation = false;
+            return;
+        }
+        
         this.foods.push(food);
         // Clear the animation flag when food is added to the array
         this.hasOngoingSpawnAnimation = false;
@@ -165,6 +176,8 @@ export class FoodManager {
         const index = this.foods.findIndex(food => food.x === position.x && food.y === position.y);
         if (index !== -1) {
             this.foods.splice(index, 1);
+            // Mark this position as collected to prevent re-adding
+            this.collectedFoods.add(`${position.x},${position.y}`);
         }
     }
 
@@ -238,9 +251,10 @@ export class FoodManager {
         // Reset animation flag
         this.hasOngoingSpawnAnimation = false;
         
-        // Generate initial food when game starts
+        // Generate initial food when game starts (go through spawn animation system)
         if (this.foods.length === 0) {
-            this.foods = [this.generateFood([])];
+            const food = this.generateFood([]);
+            // Don't add to foods array immediately - let the spawn animation system handle it
         }
     }
 

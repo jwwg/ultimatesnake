@@ -168,6 +168,10 @@ export class SnakeRenderer {
         }
         snake[snake.length - 1].nextSegment = undefined;
 
+        // Draw all connectors first (behind segments)
+        this.drawSnakeConnectors(snake);
+
+        // Draw all segments on top of connectors
         snake.forEach(segment => {
             const x = segment.x * this.config.gridSize;
             const y = segment.y * this.config.gridSize;
@@ -183,24 +187,19 @@ export class SnakeRenderer {
         });
     }
 
-    drawSnakeHead(segment: SnakeSegment, x: number, y: number, size: number): void {
-        if (segment.type === 'ram')
-            this.drawRamHead(segment, x, y, size);
-        else {
-            this.ctx.fillStyle = this.segmentColors[segment.type];
-            this.ctx.fillRect(x, y, size, size);
-
-            // Draw animated forked tongue
-            this.drawSnakeTongue(segment, x, y, size);
-
-            // Draw connecting line to next segment if it exists
+    private drawSnakeConnectors(snake: SnakeSegment[]): void {
+        snake.forEach(segment => {
             if (segment.nextSegment) {
+                const x = segment.x * this.config.gridSize;
+                const y = segment.y * this.config.gridSize;
+                const size = this.config.gridSize - 2;
+                const centerX = x + size/2;
+                const centerY = y + size/2;
+                
                 const nextX = segment.nextSegment.x * this.config.gridSize;
                 const nextY = segment.nextSegment.y * this.config.gridSize;
                 const nextCenterX = nextX + size/2;
                 const nextCenterY = nextY + size/2;
-                const centerX = x + size/2;
-                const centerY = y + size/2;
 
                 // Calculate the shortest path considering wrapping
                 let dx = nextCenterX - centerX;
@@ -217,11 +216,87 @@ export class SnakeRenderer {
                 }
 
                 this.ctx.strokeStyle = '#32CD32';
+                this.ctx.lineWidth = this.config.snakeConnectorThickness;
                 this.ctx.beginPath();
                 this.ctx.moveTo(centerX, centerY);
                 this.ctx.lineTo(centerX + dx, centerY + dy);
                 this.ctx.stroke();
+                this.ctx.lineWidth = 1; // Reset line width to default
             }
+        });
+    }
+
+    drawSnakeHead(segment: SnakeSegment, x: number, y: number, size: number): void {
+        if (segment.type === 'ram')
+            this.drawRamHead(segment, x, y, size);
+        else {
+            this.ctx.fillStyle = this.segmentColors[segment.type];
+            
+            // Make head smaller than full size but bigger than body segments
+            const headScale = 0.7; // Slightly larger than body segments (0.5) but smaller than full size (1.0)
+            const headSize = size * headScale;
+            const offset = (size - headSize) / 2; // Center the smaller head
+            
+            // Draw directional head with rounded front and square back
+            const centerX = x + size/2;
+            const centerY = y + size/2;
+            const halfSize = headSize/2;
+            const radius = headSize * 0.3; // Radius for the rounded front
+            
+            this.ctx.beginPath();
+            
+            if (segment.lastDirection?.x === 1) {
+                // Pointing right - rounded front on right, square back on left
+                this.ctx.moveTo(x + offset, y + offset); // Top-left
+                this.ctx.lineTo(x + offset + headSize - radius, y + offset); // Top edge to rounded part
+                this.ctx.arcTo(x + offset + headSize, y + offset, x + offset + headSize, y + offset + radius, radius); // Top-right rounded corner
+                this.ctx.lineTo(x + offset + headSize, y + offset + headSize - radius); // Right edge
+                this.ctx.arcTo(x + offset + headSize, y + offset + headSize, x + offset + headSize - radius, y + offset + headSize, radius); // Bottom-right rounded corner
+                this.ctx.lineTo(x + offset, y + offset + headSize); // Bottom edge
+                this.ctx.lineTo(x + offset, y + offset); // Back to start
+            } else if (segment.lastDirection?.x === -1) {
+                // Pointing left - rounded front on left, square back on right
+                this.ctx.moveTo(x + offset + headSize, y + offset); // Top-right
+                this.ctx.lineTo(x + offset + radius, y + offset); // Top edge to rounded part
+                this.ctx.arcTo(x + offset, y + offset, x + offset, y + offset + radius, radius); // Top-left rounded corner
+                this.ctx.lineTo(x + offset, y + offset + headSize - radius); // Left edge
+                this.ctx.arcTo(x + offset, y + offset + headSize, x + offset + radius, y + offset + headSize, radius); // Bottom-left rounded corner
+                this.ctx.lineTo(x + offset + headSize, y + offset + headSize); // Bottom edge
+                this.ctx.lineTo(x + offset + headSize, y + offset); // Back to start
+            } else if (segment.lastDirection?.y === 1) {
+                // Pointing down - rounded front on bottom, square back on top
+                this.ctx.moveTo(x + offset, y + offset); // Top-left
+                this.ctx.lineTo(x + offset + headSize, y + offset); // Top edge
+                this.ctx.lineTo(x + offset + headSize, y + offset + headSize - radius); // Right edge to rounded part
+                this.ctx.arcTo(x + offset + headSize, y + offset + headSize, x + offset + headSize - radius, y + offset + headSize, radius); // Bottom-right rounded corner
+                this.ctx.lineTo(x + offset + radius, y + offset + headSize); // Bottom edge
+                this.ctx.arcTo(x + offset, y + offset + headSize, x + offset, y + offset + headSize - radius, radius); // Bottom-left rounded corner
+                this.ctx.lineTo(x + offset, y + offset); // Left edge
+            } else if (segment.lastDirection?.y === -1) {
+                // Pointing up - rounded front on top, square back on bottom
+                this.ctx.moveTo(x + offset, y + offset + headSize); // Bottom-left
+                this.ctx.lineTo(x + offset + headSize, y + offset + headSize); // Bottom edge
+                this.ctx.lineTo(x + offset + headSize, y + offset + radius); // Right edge to rounded part
+                this.ctx.arcTo(x + offset + headSize, y + offset, x + offset + headSize - radius, y + offset, radius); // Top-right rounded corner
+                this.ctx.lineTo(x + offset + radius, y + offset); // Top edge
+                this.ctx.arcTo(x + offset, y + offset, x + offset, y + offset + radius, radius); // Top-left rounded corner
+                this.ctx.lineTo(x + offset, y + offset + headSize); // Left edge
+            } else {
+                // Default direction (right) if no direction is set
+                this.ctx.moveTo(x + offset, y + offset);
+                this.ctx.lineTo(x + offset + headSize - radius, y + offset);
+                this.ctx.arcTo(x + offset + headSize, y + offset, x + offset + headSize, y + offset + radius, radius);
+                this.ctx.lineTo(x + offset + headSize, y + offset + headSize - radius);
+                this.ctx.arcTo(x + offset + headSize, y + offset + headSize, x + offset + headSize - radius, y + offset + headSize, radius);
+                this.ctx.lineTo(x + offset, y + offset + headSize);
+                this.ctx.lineTo(x + offset, y + offset);
+            }
+            
+            this.ctx.closePath();
+            this.ctx.fill();
+
+            // Draw animated forked tongue
+            this.drawSnakeTongue(segment, x + offset, y + offset, headSize);
         }
     }
 
@@ -390,36 +465,6 @@ export class SnakeRenderer {
             const offset = (size - segmentSize) / 2;
             this.ctx.fillStyle = this.segmentColors[segment.type];
             this.ctx.fillRect(x + offset, y + offset, segmentSize, segmentSize);
-
-            // Draw connecting line to next segment if it exists
-            if (segment.nextSegment) {
-                const nextX = segment.nextSegment.x * this.config.gridSize;
-                const nextY = segment.nextSegment.y * this.config.gridSize;
-                const nextCenterX = nextX + size/2;
-                const nextCenterY = nextY + size/2;
-                const centerX = x + size/2;
-                const centerY = y + size/2;
-
-                // Calculate the shortest path considering wrapping
-                let dx = nextCenterX - centerX;
-                let dy = nextCenterY - centerY;
-
-                // Check if we need to wrap horizontally
-                if (Math.abs(dx) > this.canvas.width / 2) {
-                    dx = dx > 0 ? dx - this.canvas.width : dx + this.canvas.width;
-                }
-
-                // Check if we need to wrap vertically
-                if (Math.abs(dy) > this.canvas.height / 2) {
-                    dy = dy > 0 ? dy - this.canvas.height : dy + this.canvas.height;
-                }
-
-                this.ctx.strokeStyle = '#32CD32';
-                this.ctx.beginPath();
-                this.ctx.moveTo(centerX, centerY);
-                this.ctx.lineTo(centerX + dx, centerY + dy);
-                this.ctx.stroke();
-            }
         }
     }
 
