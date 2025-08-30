@@ -77,10 +77,22 @@ export class SnakeGame {
         // Set up callback for when new food spawns
         this.foodManager.setOnFoodSpawnCallback((food: FoodItem) => {
             const { startX, startY, endX, endY } = this.calculateThrowingAnimation(food);
+            
+            // Calculate distance for dynamic duration
+            const distance = Math.sqrt(
+                Math.pow(endX - startX, 2) + 
+                Math.pow(endY - startY, 2)
+            );
+            
+            // Dynamic duration based on distance - longer throws take more time
+            const baseDuration = 800; // Base duration for short throws
+            const distanceMultiplier = Math.min(distance / 200, 2); // Cap at 2x for very long throws
+            const duration = baseDuration + (distance * distanceMultiplier);
+            
             this.gameState.addFoodSpawnAnimation({
                 food,
                 startTime: Date.now(),
-                duration: 1200, // 1.2 second throwing animation
+                duration: Math.min(duration, 2000), // Cap at 2 seconds maximum
                 startX,
                 startY,
                 endX,
@@ -526,10 +538,22 @@ export class SnakeGame {
         // Set up callback for when new food spawns
         this.foodManager.setOnFoodSpawnCallback((food: FoodItem) => {
             const { startX, startY, endX, endY } = this.calculateThrowingAnimation(food);
+            
+            // Calculate distance for dynamic duration
+            const distance = Math.sqrt(
+                Math.pow(endX - startX, 2) + 
+                Math.pow(endY - startY, 2)
+            );
+            
+            // Dynamic duration based on distance - longer throws take more time
+            const baseDuration = 800; // Base duration for short throws
+            const distanceMultiplier = Math.min(distance / 200, 2); // Cap at 2x for very long throws
+            const duration = baseDuration + (distance * distanceMultiplier);
+            
             this.gameState.addFoodSpawnAnimation({
                 food,
                 startTime: Date.now(),
-                duration: 1200, // 1.2 second throwing animation
+                duration: Math.min(duration, 2000), // Cap at 2 seconds maximum
                 startX,
                 startY,
                 endX,
@@ -596,10 +620,22 @@ export class SnakeGame {
         // Set up callback for when new food spawns
         this.foodManager.setOnFoodSpawnCallback((food: FoodItem) => {
             const { startX, startY, endX, endY } = this.calculateThrowingAnimation(food);
+            
+            // Calculate distance for dynamic duration
+            const distance = Math.sqrt(
+                Math.pow(endX - startX, 2) + 
+                Math.pow(endY - startY, 2)
+            );
+            
+            // Dynamic duration based on distance - longer throws take more time
+            const baseDuration = 800; // Base duration for short throws
+            const distanceMultiplier = Math.min(distance / 200, 2); // Cap at 2x for very long throws
+            const duration = baseDuration + (distance * distanceMultiplier);
+            
             this.gameState.addFoodSpawnAnimation({
                 food,
                 startTime: Date.now(),
-                duration: 1200, // 1.2 second throwing animation
+                duration: Math.min(duration, 2000), // Cap at 2 seconds maximum
                 startX,
                 startY,
                 endX,

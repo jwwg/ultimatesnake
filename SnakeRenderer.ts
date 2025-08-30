@@ -1010,48 +1010,95 @@ export class SnakeRenderer {
                 return; // Animation complete
             }
 
-            // Calculate current position along the throwing arc
-            const currentX = anim.startX + (anim.endX - anim.startX) * progress;
-            const currentY = anim.startY + (anim.endY - anim.startY) * progress;
+            // Use easing functions for smoother motion
+            const easeOutQuart = 1 - Math.pow(1 - progress, 4); // Smooth deceleration
+            const easeInOutCubic = progress < 0.5 
+                ? 4 * progress * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2; // Smooth acceleration and deceleration
             
-            // Add a parabolic arc for realistic throwing motion
-            const arcHeight = 100; // Maximum height of the arc
-            const arcProgress = Math.sin(progress * Math.PI); // Creates a smooth arc
-            const arcY = currentY - (arcHeight * arcProgress);
+            // Calculate distance for dynamic timing
+            const distance = Math.sqrt(
+                Math.pow(anim.endX - anim.startX, 2) + 
+                Math.pow(anim.endY - anim.startY, 2)
+            );
+            
+            // Dynamic arc height based on distance
+            const arcHeight = Math.min(distance * 0.3, 150); // Proportional to distance, max 150px
+            
+            // Calculate current position with easing
+            const currentX = anim.startX + (anim.endX - anim.startX) * easeOutQuart;
+            const currentY = anim.startY + (anim.endY - anim.startY) * easeOutQuart;
+            
+            // Create a more realistic throwing arc with physics
+            const arcProgress = Math.sin(progress * Math.PI);
+            const arcY = currentY - (arcHeight * arcProgress * easeInOutCubic);
+            
+            // Add slight horizontal oscillation for more natural motion
+            const oscillation = Math.sin(progress * Math.PI * 3) * 3; // Subtle side-to-side motion
+            const finalX = currentX + oscillation;
+            
+            // Add subtle bounce effect when landing (last 20% of animation)
+            const bounceProgress = Math.max(0, (progress - 0.8) / 0.2);
+            const bounceHeight = bounceProgress > 0 ? Math.sin(bounceProgress * Math.PI) * 5 : 0;
+            const finalArcY = arcY + bounceHeight;
             
             const size = this.config.gridSize - 2;
 
-            // Add rotation effect - card spins as it flies
-            const rotation = progress * Math.PI * 2; // Full 360 degree rotation
+            // Dynamic rotation based on distance and speed
+            const rotationSpeed = Math.min(distance / 100, 3); // Faster rotation for longer throws
+            const rotation = progress * Math.PI * 2 * rotationSpeed;
             
-            // Add slight scale effect - card grows slightly as it lands
-            const scale = 0.8 + (progress * 0.2); // Start at 80% and grow to 100%
+            // Add slight wobble to rotation for more realistic motion
+            const wobble = Math.sin(progress * Math.PI * 4) * 0.1;
+            const finalRotation = rotation + wobble;
+            
+            // Dynamic scale effect - card grows as it approaches target
+            const scaleStart = 0.7;
+            const scaleEnd = 1.0;
+            const scaleProgress = easeInOutCubic;
+            const scale = scaleStart + (scaleEnd - scaleStart) * scaleProgress;
+            
+            // Add slight squash and stretch effect
+            const squashFactor = 1 + Math.sin(progress * Math.PI) * 0.1;
+            const stretchFactor = 1 - Math.sin(progress * Math.PI) * 0.05;
             
             this.ctx.save();
             
             // Apply transformations for the flying card
-            this.ctx.translate(currentX + size / 2, arcY + size / 2);
-            this.ctx.rotate(rotation);
-            this.ctx.scale(scale, scale);
-            this.ctx.translate(-(currentX + size / 2), -(arcY + size / 2));
+            this.ctx.translate(finalX + size / 2, finalArcY + size / 2);
+            this.ctx.rotate(finalRotation);
+            this.ctx.scale(scale * stretchFactor, scale * squashFactor);
+            this.ctx.translate(-(finalX + size / 2), -(finalArcY + size / 2));
             
-            // Add shadow for depth
-            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowOffsetX = 5;
-            this.ctx.shadowOffsetY = 5;
+            // Dynamic shadow based on arc height
+            const shadowIntensity = Math.max(0.1, 0.3 - (arcProgress * 0.2));
+            this.ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity})`;
+            this.ctx.shadowBlur = 8 + (arcProgress * 4);
+            this.ctx.shadowOffsetX = 3 + (arcProgress * 2);
+            this.ctx.shadowOffsetY = 3 + (arcProgress * 2);
             
-            // Draw card background
+            // Add slight glow effect for joker cards
+            if (anim.food.suit === 'joker') {
+                this.ctx.shadowColor = 'rgba(255, 215, 0, 0.3)';
+                this.ctx.shadowBlur = 15;
+            }
+            
+            // Draw card background with slight transparency during flight
+            const alpha = 0.9 + (progress * 0.1); // Gradually become more opaque
+            this.ctx.globalAlpha = alpha;
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.fillRect(currentX, arcY, size, size);
+            this.ctx.fillRect(finalX, finalArcY, size, size);
+            
+            // Reset shadow and alpha
             this.ctx.shadowBlur = 0;
             this.ctx.shadowOffsetX = 0;
             this.ctx.shadowOffsetY = 0;
+            this.ctx.globalAlpha = 1;
             
             // Draw card border
             this.ctx.strokeStyle = anim.food.suit === 'joker' ? '#000000' : this.cardColors[anim.food.suit];
             this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(currentX, arcY, size, size);
+            this.ctx.strokeRect(finalX, finalArcY, size, size);
             
             // Draw card content
             this.ctx.fillStyle = anim.food.suit === 'joker' ? '#000000' : this.cardColors[anim.food.suit];
@@ -1063,14 +1110,14 @@ export class SnakeRenderer {
                 // Draw joker symbol (question mark)
                 const suitSymbol = this.getSuitSymbol(anim.food.suit);
                 this.ctx.font = `${size * 0.5}px Arial`;
-                this.ctx.fillText(suitSymbol, currentX + size / 2, arcY + size / 2);
+                this.ctx.fillText(suitSymbol, finalX + size / 2, finalArcY + size / 2);
             } else {
                 // Draw regular card content
-                this.ctx.fillText(anim.food.rank, currentX + size / 2, arcY + size * 0.3);
+                this.ctx.fillText(anim.food.rank, finalX + size / 2, finalArcY + size * 0.3);
                 // Draw suit symbol
                 const suitSymbol = this.getSuitSymbol(anim.food.suit);
                 this.ctx.font = `${size * 0.5}px Arial`;
-                this.ctx.fillText(suitSymbol, currentX + size / 2, arcY + size * 0.7);
+                this.ctx.fillText(suitSymbol, finalX + size / 2, finalArcY + size * 0.7);
             }
             
             this.ctx.restore();

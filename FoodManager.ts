@@ -13,6 +13,7 @@ export class FoodManager {
     private isDeckEmpty: boolean = false;
     private onFoodSpawnCallback?: (food: FoodItem) => void;
     private onFoodReadyCallback?: (food: FoodItem) => void;
+    private hasOngoingSpawnAnimation: boolean = false;
 
     constructor(tileCount: { x: number; y: number }, config: {
         maxFoodItems: number;
@@ -55,18 +56,6 @@ export class FoodManager {
             return null;
         }
         
-        // For debugging: make the second card always be a joker
-        const cardsDrawn = 52 + 4 - this.deck.length; // 52 regular cards + 4 jokers - remaining cards
-        if (cardsDrawn === 1) {
-            // Find and return a joker card
-            const jokerIndex = this.deck.findIndex(card => card.suit === 'joker');
-            if (jokerIndex !== -1) {
-                const joker = this.deck[jokerIndex];
-                this.deck.splice(jokerIndex, 1);
-                return joker;
-            }
-        }
-        
         return this.deck.pop()!;
     }
 
@@ -91,6 +80,9 @@ export class FoodManager {
             rank: card.rank
         };
 
+        // Set flag to indicate ongoing spawn animation
+        this.hasOngoingSpawnAnimation = true;
+
         // Notify callback about new food spawn (for animation)
         if (this.onFoodSpawnCallback) {
             this.onFoodSpawnCallback(food);
@@ -101,6 +93,8 @@ export class FoodManager {
 
     addFoodToArray(food: FoodItem): void {
         this.foods.push(food);
+        // Clear the animation flag when food is added to the array
+        this.hasOngoingSpawnAnimation = false;
     }
 
     private isPositionOccupied(position: Position, snakePositions: Position[]): boolean {
@@ -134,7 +128,7 @@ export class FoodManager {
         }
 
         // Ensure there's at least one food item if we have cards left
-        if (this.foods.length === 0 && !this.isDeckEmpty) {
+        if (this.foods.length === 0 && !this.isDeckEmpty && !this.hasOngoingSpawnAnimation) {
             try {
                 const food = this.generateFood(snakePositions);
                 // Don't add to foods array immediately - wait for animation to complete
@@ -150,7 +144,8 @@ export class FoodManager {
         if (!this.isDeckEmpty && 
             this.foods.length < this.config.maxFoodItems && 
             currentTime - this.lastFoodGeneration > this.config.minFoodInterval &&
-            Math.random() < 0.1) {
+            !this.hasOngoingSpawnAnimation &&
+            Math.random() < 0.05) { // Reduced from 0.1 to 0.05 for more controlled spawning
             try {
                 const food = this.generateFood(snakePositions);
                 // Don't add to foods array immediately - wait for animation to complete
@@ -240,6 +235,9 @@ export class FoodManager {
     }
 
     startGeneratingFood(): void {
+        // Reset animation flag
+        this.hasOngoingSpawnAnimation = false;
+        
         // Generate initial food when game starts
         if (this.foods.length === 0) {
             this.foods = [this.generateFood([])];
@@ -263,5 +261,13 @@ export class FoodManager {
         
         // Reset deck empty flag
         this.isDeckEmpty = false;
+        
+        // Reset animation flag
+        this.hasOngoingSpawnAnimation = false;
+    }
+
+    // Method to check if there's an ongoing spawn animation
+    isSpawnAnimationInProgress(): boolean {
+        return this.hasOngoingSpawnAnimation;
     }
 } 
